@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ayupov-ayaz/todo/pkg/modules/item"
-
 	"github.com/ayupov-ayaz/todo/pkg/modules/list"
+
+	"github.com/ayupov-ayaz/todo/pkg/modules/item"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -16,18 +16,25 @@ import (
 )
 
 func authModel(s *fiber.App) {
-	authHandler := new(auth.Handler)
-	authHandler.RunHandler(s)
+	repo := auth.NewRepository()
+	srv := auth.NewHandler(repo)
+	handler := auth.NewHandler(srv)
+	handler.RunHandler(s)
 }
 
 func itemHandler(s *fiber.App) {
-	itemHandler := new(item.Handler)
-	itemHandler.RunHandler(s)
+	repo := item.NewRepository()
+	srv := item.NewHandler(repo)
+	handler := item.NewHandler(srv)
+	handler.RunHandler(s)
 }
 
 func listHandler(s *fiber.App) {
-	listHandler := new(list.Handler)
-	listHandler.RunHandler(s)
+	repo := list.NewRepository()
+	srv := list.NewHandler(repo)
+	handler := list.NewHandler(srv)
+	handler.RunHandler(s)
+
 }
 
 func Run() error {

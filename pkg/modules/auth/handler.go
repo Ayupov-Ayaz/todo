@@ -6,7 +6,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Handler struct{}
+type AuthorizationService interface {
+}
+
+type Handler struct {
+	srv AuthorizationService
+}
+
+func NewHandler(srv AuthorizationService) *Handler {
+	return &Handler{srv: srv}
+}
 
 func (h *Handler) RunHandler(router fiber.Router) {
 	group := router.Group("/auth")

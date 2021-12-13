@@ -2,7 +2,16 @@ package item
 
 import "github.com/gofiber/fiber/v2"
 
-type Handler struct{}
+type TodoItemService interface {
+}
+
+type Handler struct {
+	srv TodoItemService
+}
+
+func NewHandler(srv TodoItemService) *Handler {
+	return &Handler{srv: srv}
+}
 
 func (h *Handler) RunHandler(router fiber.Router) {
 	group := router.Group("/lists")
