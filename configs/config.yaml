@@ -1,1 +1,12 @@
-"port": 8082
+"server":
+  "port": 8082
+  "timeouts":
+    "read": "5s"
+    "write": "5s"
+
+"db":
+  "host": localhost
+  "port": 5433
+  "username": postgres
+  "dbname": postgres
+  "sslmode": disable

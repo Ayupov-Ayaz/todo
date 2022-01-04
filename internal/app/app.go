@@ -2,7 +2,12 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
+
+	"github.com/ayupov-ayaz/todo/pkg/repository"
 
 	"github.com/spf13/viper"
 
@@ -17,33 +22,63 @@ import (
 	"github.com/ayupov-ayaz/todo/internal/delivery/http"
 )
 
+const (
+	envFilePath = "./configs/.env"
+)
+
 func initConfig() error {
+	if err := godotenv.Load(envFilePath); err != nil {
+		return fmt.Errorf("error loading env variables: %w", err)
+	}
+
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
 
 	return viper.ReadInConfig()
 }
 
-func authModel(s *fiber.App) {
-	repo := auth.NewRepository()
+func authModel(s *fiber.App, db repository.DbRepository) {
+	repo := auth.NewRepository(db)
 	srv := auth.NewHandler(repo)
 	handler := auth.NewHandler(srv)
 	handler.RunHandler(s)
 }
 
-func itemHandler(s *fiber.App) {
-	repo := item.NewRepository()
+func itemHandler(s *fiber.App, db repository.DbRepository) {
+	repo := item.NewRepository(db)
 	srv := item.NewHandler(repo)
 	handler := item.NewHandler(srv)
 	handler.RunHandler(s)
 }
 
-func listHandler(s *fiber.App) {
-	repo := list.NewRepository()
+func listHandler(s *fiber.App, db repository.DbRepository) {
+	repo := list.NewRepository(db)
 	srv := list.NewHandler(repo)
 	handler := list.NewHandler(srv)
 	handler.RunHandler(s)
 
+}
+
+func makeServer() *fiber.App {
+	cfg := http.Cfg{
+		ReadTimeout:  viper.GetDuration("server.timeouts.read"),
+		WriteTimeout: viper.GetDuration("server.timeouts.write"),
+	}
+
+	return http.NewServer(cfg)
+}
+
+func makePostgres() (*repository.PostgresDb, error) {
+	cfg := repository.PostgresConfig{
+		Host:     viper.GetString("db.host"),
+		Port:     viper.GetInt("db.port"),
+		Username: viper.GetString("db.username"),
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   viper.GetString("db.dbname"),
+		SSlMode:  viper.GetString("db.sslmode"),
+	}
+
+	return repository.MakePostgresDb(cfg)
 }
 
 func Run() error {
@@ -51,16 +86,17 @@ func Run() error {
 		return err
 	}
 
-	cfg := http.DefaultCfg()
-	cfg.Port = viper.GetInt("port")
+	db, err := makePostgres()
+	if err != nil {
+		return err
+	}
 
-	s := http.NewServer(cfg)
+	s := makeServer()
+	authModel(s, db)
+	listHandler(s, db)
+	itemHandler(s, db)
 
-	authModel(s)
-	listHandler(s)
-	itemHandler(s)
-
-	if err := s.Listen(":" + strconv.Itoa(cfg.Port)); err != nil {
+	if err := s.Listen(":" + strconv.Itoa(viper.GetInt("server.port"))); err != nil {
 		return fmt.Errorf("occured while running http server: %w", err)
 	}
 
