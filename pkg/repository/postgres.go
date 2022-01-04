@@ -16,7 +16,7 @@ type PostgresConfig struct {
 	SSlMode  string
 }
 
-func makeSqlxDB(cfg PostgresConfig) (*sqlx.DB, error) {
+func MakePostgresDb(cfg PostgresConfig) (*sqlx.DB, error) {
 	dbSourceName := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.Username, cfg.DBName, cfg.Password, cfg.SSlMode)
 
@@ -30,17 +30,4 @@ func makeSqlxDB(cfg PostgresConfig) (*sqlx.DB, error) {
 	}
 
 	return db, nil
-}
-
-type PostgresDb struct {
-	sqlx *sqlx.DB
-}
-
-func MakePostgresDb(cfg PostgresConfig) (*PostgresDb, error) {
-	db, err := makeSqlxDB(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &PostgresDb{sqlx: db}, nil
 }

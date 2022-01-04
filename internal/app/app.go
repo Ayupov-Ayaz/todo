@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/jmoiron/sqlx"
+
 	"go.uber.org/zap"
 
 	"github.com/joho/godotenv"
@@ -49,21 +51,21 @@ func initConfig() error {
 	return viper.ReadInConfig()
 }
 
-func authModel(s *fiber.App, db repository.DbRepository) {
+func authModel(s *fiber.App, db *sqlx.DB) {
 	repo := auth.NewRepository(db)
-	srv := auth.NewHandler(repo)
+	srv := auth.NewService(repo, os.Getenv("PASS_SALT"))
 	handler := auth.NewHandler(srv)
 	handler.RunHandler(s)
 }
 
-func itemHandler(s *fiber.App, db repository.DbRepository) {
+func itemHandler(s *fiber.App, db *sqlx.DB) {
 	repo := item.NewRepository(db)
 	srv := item.NewHandler(repo)
 	handler := item.NewHandler(srv)
 	handler.RunHandler(s)
 }
 
-func listHandler(s *fiber.App, db repository.DbRepository) {
+func listHandler(s *fiber.App, db *sqlx.DB) {
 	repo := list.NewRepository(db)
 	srv := list.NewHandler(repo)
 	handler := list.NewHandler(srv)
@@ -80,7 +82,7 @@ func makeServer() *fiber.App {
 	return http.NewServer(cfg)
 }
 
-func makePostgres() (*repository.PostgresDb, error) {
+func makePostgres() (*sqlx.DB, error) {
 	cfg := repository.PostgresConfig{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetInt("db.port"),

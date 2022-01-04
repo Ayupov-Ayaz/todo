@@ -1,12 +1,12 @@
 package item
 
-import "github.com/ayupov-ayaz/todo/pkg/repository"
+import "github.com/jmoiron/sqlx"
 
 type Repository struct {
-	db repository.DbRepository
+	db *sqlx.DB
 }
 
-func NewRepository(db repository.DbRepository) Repository {
+func NewRepository(db *sqlx.DB) Repository {
 	return Repository{
 		db: db,
 	}
