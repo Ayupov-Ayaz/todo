@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 
+	"go.uber.org/zap"
+
 	"github.com/joho/godotenv"
 
 	"github.com/ayupov-ayaz/todo/pkg/repository"
@@ -25,6 +27,16 @@ import (
 const (
 	envFilePath = "./configs/.env"
 )
+
+func initLogger() error {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return err
+	}
+	zap.ReplaceGlobals(logger)
+
+	return nil
+}
 
 func initConfig() error {
 	if err := godotenv.Load(envFilePath); err != nil {
@@ -83,6 +95,10 @@ func makePostgres() (*repository.PostgresDb, error) {
 
 func Run() error {
 	if err := initConfig(); err != nil {
+		return err
+	}
+
+	if err := initLogger(); err != nil {
 		return err
 	}
 
