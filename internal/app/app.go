@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/spf13/viper"
+
 	"github.com/ayupov-ayaz/todo/pkg/modules/list"
 
 	"github.com/ayupov-ayaz/todo/pkg/modules/item"
@@ -14,6 +16,13 @@ import (
 
 	"github.com/ayupov-ayaz/todo/internal/delivery/http"
 )
+
+func initConfig() error {
+	viper.AddConfigPath("configs")
+	viper.SetConfigName("config")
+
+	return viper.ReadInConfig()
+}
 
 func authModel(s *fiber.App) {
 	repo := auth.NewRepository()
@@ -38,7 +47,13 @@ func listHandler(s *fiber.App) {
 }
 
 func Run() error {
+	if err := initConfig(); err != nil {
+		return err
+	}
+
 	cfg := http.DefaultCfg()
+	cfg.Port = viper.GetInt("port")
+
 	s := http.NewServer(cfg)
 
 	authModel(s)
