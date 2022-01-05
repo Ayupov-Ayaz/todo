@@ -10,4 +10,4 @@ run-postgres:
 # down
 COMMAND ?= up
 migrate:
-	migrate -path ./migrations -database 'postgres://postgres:$(POSTGRES-PASS)@localhost:$(POSTGRES-PORT)/postgres?sslmode=disable' $(COMMAND)
+	migrate -path ./internal/migrations -database 'postgres://postgres:$(POSTGRES-PASS)@localhost:$(POSTGRES-PORT)/postgres?sslmode=disable' $(COMMAND)
