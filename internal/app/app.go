@@ -52,21 +52,21 @@ func initConfig() error {
 }
 
 func authModel(s *fiber.App, db *sqlx.DB) {
-	repo := auth.NewRepository(db)
+	repo := auth.NewPostgresRepository(db)
 	srv := auth.NewService(repo, os.Getenv("PASS_SALT"))
 	handler := auth.NewHandler(srv)
 	handler.RunHandler(s)
 }
 
 func itemHandler(s *fiber.App, db *sqlx.DB) {
-	repo := item.NewRepository(db)
+	repo := item.NewPostgresRepository(db)
 	srv := item.NewHandler(repo)
 	handler := item.NewHandler(srv)
 	handler.RunHandler(s)
 }
 
 func listHandler(s *fiber.App, db *sqlx.DB) {
-	repo := list.NewRepository(db)
+	repo := list.NewPostgresRepository(db)
 	srv := list.NewHandler(repo)
 	handler := list.NewHandler(srv)
 	handler.RunHandler(s)

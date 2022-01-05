@@ -10,17 +10,17 @@ const (
 	exist  = "SELECT EXISTS(SELECT id FROM users WHERE username = $1);"
 )
 
-type Repository struct {
+type PostgresRepository struct {
 	db *sqlx.DB
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
-	return &Repository{
+func NewPostgresRepository(db *sqlx.DB) *PostgresRepository {
+	return &PostgresRepository{
 		db: db,
 	}
 }
 
-func (r *Repository) Create(user models.User) (int, error) {
+func (r *PostgresRepository) Create(user models.User) (int, error) {
 	id := 0
 
 	if err := r.db.QueryRow(create, user.Name, user.Username, user.Password).Scan(&id); err != nil {
@@ -30,7 +30,7 @@ func (r *Repository) Create(user models.User) (int, error) {
 	return id, nil
 }
 
-func (r *Repository) Exist(username string) (bool, error) {
+func (r *PostgresRepository) Exist(username string) (bool, error) {
 	ok := false
 	if err := r.db.QueryRow(exist, username).Scan(&ok); err != nil {
 		return false, err
