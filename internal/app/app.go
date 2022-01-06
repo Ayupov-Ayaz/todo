@@ -51,11 +51,23 @@ func initConfig() error {
 	return viper.ReadInConfig()
 }
 
-func authModel(s *fiber.App, db *sqlx.DB) {
+func authModel(s *fiber.App, db *sqlx.DB) error {
 	repo := auth.NewPostgresRepository(db)
-	srv := auth.NewService(repo, os.Getenv("PASS_SALT"))
+	cfg := auth.Config{
+		Salt:       []byte(os.Getenv("PASS_SALT")),
+		SigningKey: []byte(os.Getenv("SIGNING_KEY")),
+		Expired:    viper.GetDuration("auth.expired"),
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
+
+	srv := auth.NewService(repo, cfg)
 	handler := auth.NewHandler(srv)
 	handler.RunHandler(s)
+
+	return nil
 }
 
 func itemHandler(s *fiber.App, db *sqlx.DB) {
@@ -110,7 +122,11 @@ func Run() error {
 	}
 
 	s := makeServer()
-	authModel(s, db)
+
+	if err := authModel(s, db); err != nil {
+		return err
+	}
+
 	listHandler(s, db)
 	itemHandler(s, db)
 

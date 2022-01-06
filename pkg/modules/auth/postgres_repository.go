@@ -1,13 +1,22 @@
 package auth
 
 import (
+	"database/sql"
+	"errors"
+
+	_errors "github.com/ayupov-ayaz/todo/errors"
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/jmoiron/sqlx"
+)
+
+var (
+	ErrAuthorizationFailed = _errors.Forbidden("authorization failed")
 )
 
 const (
 	create = "INSERT INTO users (name, username, password_hash) VALUES ($1, $2, $3) RETURNING id"
 	exist  = "SELECT EXISTS(SELECT id FROM users WHERE username = $1);"
+	get    = "SELECT id FROM users WHERE username = $1 AND password_hash = $2"
 )
 
 type PostgresRepository struct {
@@ -37,4 +46,16 @@ func (r *PostgresRepository) Exist(username string) (bool, error) {
 	}
 
 	return ok, nil
+}
+
+func (r *PostgresRepository) Get(username, password string) (models.User, error) {
+	var user models.User
+
+	err := r.db.Get(&user, get, username, password)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		err = ErrAuthorizationFailed
+	}
+
+	return user, err
 }

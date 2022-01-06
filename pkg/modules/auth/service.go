@@ -3,6 +3,9 @@ package auth
 import (
 	"crypto/sha1"
 	"fmt"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	_errors "github.com/ayupov-ayaz/todo/errors"
 
@@ -18,21 +21,22 @@ var (
 type AuthorizationRepository interface {
 	Create(user models.User) (int, error)
 	Exist(username string) (bool, error)
+	Get(username, password string) (models.User, error)
 }
 
 type Service struct {
 	repo     AuthorizationRepository
 	validate *validator.Validate
+	configs  Config
 	logger   *zap.Logger
-	salt     []byte
 }
 
-func NewService(repo AuthorizationRepository, salt string) *Service {
+func NewService(repo AuthorizationRepository, cfg Config) *Service {
 	return &Service{
 		repo:     repo,
 		validate: validator.New(),
 		logger:   zap.L().Named("auth_srv"),
-		salt:     []byte(salt),
+		configs:  cfg,
 	}
 }
 
@@ -65,7 +69,7 @@ func (s *Service) Create(user models.User) (int, error) {
 		return 0, ErrUsernameIsBusy
 	}
 
-	user.Password = generatePasswordHash(user.Password, s.salt)
+	user.Password = generatePasswordHash(user.Password, s.configs.Salt)
 
 	id, err := s.repo.Create(user)
 	if err != nil {
@@ -74,4 +78,32 @@ func (s *Service) Create(user models.User) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (s *Service) SignIn(username, password string) (string, error) {
+	user, err := s.repo.Get(username, generatePasswordHash(password, s.configs.Salt))
+	if err != nil {
+		s.logger.Error("get user failed",
+			zap.String("username", username),
+			zap.Error(err))
+
+		return "", err
+	}
+
+	now := time.Now()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
+		StandardClaims: jwt.StandardClaims{
+			IssuedAt:  now.Unix(),
+			ExpiresAt: now.Add(s.configs.Expired).Unix(),
+		},
+		UserID: user.ID,
+	})
+
+	jwtToken, err := token.SignedString(s.configs.SigningKey)
+	if err != nil {
+		s.logger.Error("sign jwt token failed", zap.Error(err))
+		return "", err
+	}
+
+	return jwtToken, nil
 }

@@ -10,3 +10,6 @@
   "username": postgres
   "dbname": postgres
   "sslmode": disable
+
+"auth":
+  "expired": 24h
