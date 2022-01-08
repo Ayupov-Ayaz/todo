@@ -44,15 +44,18 @@ func (h *Handler) RunHandler(router fiber.Router) {
 	group.Delete("/:id", h.Delete)
 }
 
-func (h Handler) Create(ctx *fiber.Ctx) error {
-	var list models.TodoList
+func (h *Handler) Create(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
 
+	var list models.TodoList
 	if err := json.Unmarshal(ctx.Body(), &list); err != nil {
 		h.logger.Warn("unmarshal body failed", zap.Error(err))
 		return ErrInvalidRequest
 	}
-
-	userID := helper.GetUserID(ctx)
 
 	id, err := h.srv.Create(ctx.UserContext(), userID, list)
 	if err != nil {

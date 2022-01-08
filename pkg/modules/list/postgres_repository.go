@@ -32,14 +32,17 @@ func (r *PostgresRepository) Create(_ context.Context, userID int, list models.T
 	id := 0
 
 	if err := tx.QueryRow(create, list.Title, list.Description).Scan(&id); err != nil {
+		_ = tx.Rollback()
 		return 0, fmt.Errorf("insert list failed: %w", err)
 	}
 
-	if err := tx.QueryRow(linkListUser, userID, id).Err(); err != nil {
+	if _, err := tx.Exec(linkListUser, userID, id); err != nil {
+		_ = tx.Rollback()
 		return 0, fmt.Errorf("insert link listID => userID failed: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
 		return 0, fmt.Errorf("close transaction failed: %w", err)
 	}
 

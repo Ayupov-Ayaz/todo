@@ -30,7 +30,7 @@ func (h *Handler) RunHandler(router fiber.Router) {
 }
 
 func (h *Handler) Create(ctx *fiber.Ctx) error {
-	userID := helper.GetUserID(ctx)
+	userID, _ := helper.GetUserID(ctx)
 	fmt.Println(userID)
 
 	return nil
