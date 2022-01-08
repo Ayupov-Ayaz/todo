@@ -21,7 +21,7 @@ type TokenParser interface {
 func skip(ctx *fiber.Ctx) bool {
 	uri := string(ctx.Request().URI().Path())
 
-	return ctx.Route().Method == fiber.MethodGet || strings.HasPrefix(uri, "/auth")
+	return strings.HasPrefix(uri, "/auth")
 }
 
 func auth(parser TokenParser) fiber.Handler {

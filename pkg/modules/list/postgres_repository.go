@@ -11,6 +11,10 @@ import (
 const (
 	create       = `INSERT INTO todo_list (title, description) VALUES ($1, $2) RETURNING id;`
 	linkListUser = `INSERT INTO users_lists (user_id, list_id) VALUES ($1, $2);`
+	getAll       = `SELECT tl.id, tl.title 
+					FROM todo_list tl 
+					INNER JOIN users_lists ul on tl.id = ul.list_id 
+					WHERE ul.user_id = $1`
 )
 
 type PostgresRepository struct {
@@ -47,4 +51,12 @@ func (r *PostgresRepository) Create(_ context.Context, userID int, list models.T
 	}
 
 	return id, nil
+}
+
+func (r *PostgresRepository) GetAll(_ context.Context, userID int) ([]models.TodoList, error) {
+	var lists []models.TodoList
+
+	err := r.db.Select(&lists, getAll, userID)
+
+	return lists, err
 }

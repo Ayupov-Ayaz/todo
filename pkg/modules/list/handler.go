@@ -20,6 +20,7 @@ var (
 
 type TodoListService interface {
 	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
+	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
 }
 
 type Handler struct {
@@ -38,7 +39,7 @@ func (h *Handler) RunHandler(router fiber.Router) {
 	group := router.Group("/lists")
 
 	group.Post("/", h.Create)
-	group.Get("/", h.GetList)
+	group.Get("/", h.GetLists)
 	group.Get("/:id", h.Get)
 	group.Patch("/:id", h.Update)
 	group.Delete("/:id", h.Delete)
@@ -72,12 +73,34 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Get(ctx *fiber.Ctx) error {
+type getAllListResponse struct {
+	List []models.TodoList `json:"list"`
+}
+
+func (h *Handler) GetLists(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	lists, err := h.srv.GetAll(ctx.UserContext(), userID)
+	if err != nil {
+		return err
+	}
+
+	raw, err := json.Marshal(getAllListResponse{List: lists})
+	if err != nil {
+		h.logger.Error("marshaling lists failed", zap.Error(err))
+		return err
+	}
+
+	http.SendJson(ctx, raw, 200)
 
 	return nil
 }
 
-func (h Handler) GetList(ctx *fiber.Ctx) error {
+func (h Handler) Get(ctx *fiber.Ctx) error {
 
 	return nil
 }

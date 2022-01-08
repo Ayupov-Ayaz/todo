@@ -12,6 +12,7 @@ import (
 
 type TodoListRepository interface {
 	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
+	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
 }
 
 type Service struct {
@@ -41,4 +42,14 @@ func (s *Service) Create(ctx context.Context, userID int, list models.TodoList) 
 	}
 
 	return id, nil
+}
+
+func (s *Service) GetAll(ctx context.Context, userID int) ([]models.TodoList, error) {
+	lists, err := s.repo.GetAll(ctx, userID)
+	if err != nil {
+		s.logger.Error("get lists failed", zap.Error(err))
+		return nil, err
+	}
+
+	return lists, nil
 }
