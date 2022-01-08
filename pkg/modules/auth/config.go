@@ -8,7 +8,7 @@ import (
 type Config struct {
 	Salt       []byte
 	SigningKey []byte
-	Expired    time.Duration
+	LifeTime   time.Duration
 }
 
 func (c Config) Validate() error {
@@ -20,8 +20,8 @@ func (c Config) Validate() error {
 		return errors.New("signing key is required")
 	}
 
-	if c.Expired == 0 {
-		return errors.New("expired is required")
+	if c.LifeTime == 0 {
+		return errors.New("lifetime is required")
 	}
 
 	return nil

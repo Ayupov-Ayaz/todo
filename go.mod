@@ -4,9 +4,10 @@ go 1.16
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/go-playground/validator/v10 v10.10.0 // indirect
-	github.com/gofiber/fiber/v2 v2.23.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-playground/validator/v10 v10.10.0
+	github.com/gofiber/fiber/v2 v2.24.0
+	github.com/gofiber/jwt/v3 v3.2.3
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/joho/godotenv v1.4.0
 	github.com/klauspost/compress v1.13.6 // indirect

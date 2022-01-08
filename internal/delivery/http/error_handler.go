@@ -4,10 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	"github.com/dgrijalva/jwt-go"
 
+	_errors "github.com/ayupov-ayaz/todo/errors"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
+)
+
+const (
+	statusForbidden  = 403
+	statusNotFound   = 404
+	statusBadRequest = 400
 )
 
 func ParseError(err error) (message string, httpStatus int) {
@@ -15,10 +22,35 @@ func ParseError(err error) (message string, httpStatus int) {
 	httpStatus = 500
 
 	var httpStatusErr _errors.HttpStatusError
-
 	if errors.As(err, &httpStatusErr) {
 		httpStatus = httpStatusErr.HttpStatus()
 		message = httpStatusErr.Error()
+		return
+	}
+
+	var jwtErr *jwt.ValidationError
+	if errors.As(err, &jwtErr) {
+		httpStatus = statusForbidden
+		message = err.Error()
+		return
+	}
+
+	if errors.Is(err, fiber.ErrForbidden) {
+		httpStatus = statusForbidden
+		message = err.Error()
+		return
+	}
+
+	if errors.Is(err, fiber.ErrNotFound) {
+		httpStatus = statusNotFound
+		message = err.Error()
+		return
+	}
+
+	if errors.Is(err, fiber.ErrBadRequest) {
+		httpStatus = statusBadRequest
+		message = err.Error()
+		return
 	}
 
 	return

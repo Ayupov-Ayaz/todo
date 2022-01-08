@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-
 	_errors "github.com/ayupov-ayaz/todo/errors"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
@@ -24,19 +22,27 @@ type AuthorizationRepository interface {
 	Get(username, password string) (models.User, error)
 }
 
+type CreateToken interface {
+	CreateToken(userID int, lifeTime time.Duration) (string, error)
+}
+
 type Service struct {
 	repo     AuthorizationRepository
 	validate *validator.Validate
-	configs  Config
+	token    CreateToken
+	salt     []byte
+	lifeTime time.Duration
 	logger   *zap.Logger
 }
 
-func NewService(repo AuthorizationRepository, cfg Config) *Service {
+func NewService(repo AuthorizationRepository, token CreateToken, salt []byte, lifeTime time.Duration) *Service {
 	return &Service{
 		repo:     repo,
 		validate: validator.New(),
+		token:    token,
+		salt:     salt,
+		lifeTime: lifeTime,
 		logger:   zap.L().Named("auth_srv"),
-		configs:  cfg,
 	}
 }
 
@@ -69,7 +75,7 @@ func (s *Service) Create(user models.User) (int, error) {
 		return 0, ErrUsernameIsBusy
 	}
 
-	user.Password = generatePasswordHash(user.Password, s.configs.Salt)
+	user.Password = generatePasswordHash(user.Password, s.salt)
 
 	id, err := s.repo.Create(user)
 	if err != nil {
@@ -81,7 +87,7 @@ func (s *Service) Create(user models.User) (int, error) {
 }
 
 func (s *Service) SignIn(username, password string) (string, error) {
-	user, err := s.repo.Get(username, generatePasswordHash(password, s.configs.Salt))
+	user, err := s.repo.Get(username, generatePasswordHash(password, s.salt))
 	if err != nil {
 		s.logger.Error("get user failed",
 			zap.String("username", username),
@@ -90,20 +96,12 @@ func (s *Service) SignIn(username, password string) (string, error) {
 		return "", err
 	}
 
-	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		StandardClaims: jwt.StandardClaims{
-			IssuedAt:  now.Unix(),
-			ExpiresAt: now.Add(s.configs.Expired).Unix(),
-		},
-		UserID: user.ID,
-	})
-
-	jwtToken, err := token.SignedString(s.configs.SigningKey)
+	token, err := s.token.CreateToken(user.ID, s.lifeTime)
 	if err != nil {
-		s.logger.Error("sign jwt token failed", zap.Error(err))
+		s.logger.Error("create jwt token failed", zap.Error(err))
+
 		return "", err
 	}
 
-	return jwtToken, nil
+	return token, nil
 }

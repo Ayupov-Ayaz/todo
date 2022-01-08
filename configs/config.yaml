@@ -12,4 +12,4 @@
   "sslmode": disable
 
 "auth":
-  "expired": 24h
+  "lifetime": 24h

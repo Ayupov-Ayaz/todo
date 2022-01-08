@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
+
+	"github.com/ayupov-ayaz/todo/internal/server"
+
+	"github.com/ayupov-ayaz/todo/pkg/services/jwt"
 
 	"github.com/jmoiron/sqlx"
 
@@ -22,8 +27,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/ayupov-ayaz/todo/pkg/modules/auth"
-
-	"github.com/ayupov-ayaz/todo/internal/delivery/http"
 )
 
 const (
@@ -51,23 +54,11 @@ func initConfig() error {
 	return viper.ReadInConfig()
 }
 
-func authModel(s *fiber.App, db *sqlx.DB) error {
+func authModel(s *fiber.App, db *sqlx.DB, jwtSrv jwt.Service, salt []byte, lifetime time.Duration) {
 	repo := auth.NewPostgresRepository(db)
-	cfg := auth.Config{
-		Salt:       []byte(os.Getenv("PASS_SALT")),
-		SigningKey: []byte(os.Getenv("SIGNING_KEY")),
-		Expired:    viper.GetDuration("auth.expired"),
-	}
-
-	if err := cfg.Validate(); err != nil {
-		return err
-	}
-
-	srv := auth.NewService(repo, cfg)
+	srv := auth.NewService(repo, jwtSrv, salt, lifetime)
 	handler := auth.NewHandler(srv)
 	handler.RunHandler(s)
-
-	return nil
 }
 
 func itemHandler(s *fiber.App, db *sqlx.DB) {
@@ -83,15 +74,6 @@ func listHandler(s *fiber.App, db *sqlx.DB) {
 	handler := list.NewHandler(srv)
 	handler.RunHandler(s)
 
-}
-
-func makeServer() *fiber.App {
-	cfg := http.Cfg{
-		ReadTimeout:  viper.GetDuration("server.timeouts.read"),
-		WriteTimeout: viper.GetDuration("server.timeouts.write"),
-	}
-
-	return http.NewServer(cfg)
 }
 
 func makePostgres() (*sqlx.DB, error) {
@@ -116,17 +98,25 @@ func Run() error {
 		return err
 	}
 
+	authCfg := auth.Config{
+		Salt:       []byte(os.Getenv("PASS_SALT")),
+		SigningKey: []byte(os.Getenv("SIGNING_KEY")),
+		LifeTime:   viper.GetDuration("auth.lifetime"),
+	}
+
+	if err := authCfg.Validate(); err != nil {
+		return err
+	}
+
 	db, err := makePostgres()
 	if err != nil {
 		return err
 	}
 
-	s := makeServer()
+	jwtSrv := jwt.NewService(authCfg.SigningKey)
+	s := server.NewServer(jwtSrv)
 
-	if err := authModel(s, db); err != nil {
-		return err
-	}
-
+	authModel(s, db, jwtSrv, authCfg.Salt, authCfg.LifeTime)
 	listHandler(s, db)
 	itemHandler(s, db)
 

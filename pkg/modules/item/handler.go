@@ -1,6 +1,12 @@
 package item
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"fmt"
+
+	"github.com/ayupov-ayaz/todo/internal/helper"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 type TodoItemService interface {
 }
@@ -14,7 +20,7 @@ func NewHandler(srv TodoItemService) *Handler {
 }
 
 func (h *Handler) RunHandler(router fiber.Router) {
-	group := router.Group("/lists")
+	group := router.Group("/item")
 
 	group.Post("/", h.Create)
 	group.Get("/", h.GetList)
@@ -23,7 +29,8 @@ func (h *Handler) RunHandler(router fiber.Router) {
 	group.Delete("/:id", h.Delete)
 }
 
-func (h Handler) Create(ctx *fiber.Ctx) error {
+func (h *Handler) Create(ctx *fiber.Ctx) error {
+	fmt.Println(helper.GetUserID(ctx))
 
 	return nil
 }
