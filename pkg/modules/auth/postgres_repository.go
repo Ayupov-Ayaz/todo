@@ -14,9 +14,9 @@ var (
 )
 
 const (
-	create = "INSERT INTO users (name, username, password_hash) VALUES ($1, $2, $3) RETURNING id"
+	create = "INSERT INTO users (name, username, password_hash) VALUES ($1, $2, $3) RETURNING id;"
 	exist  = "SELECT EXISTS(SELECT id FROM users WHERE username = $1);"
-	get    = "SELECT id FROM users WHERE username = $1 AND password_hash = $2"
+	get    = "SELECT id FROM users WHERE username = $1 AND password_hash = $2;"
 )
 
 type PostgresRepository struct {

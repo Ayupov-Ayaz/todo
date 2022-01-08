@@ -3,6 +3,8 @@ package auth
 import (
 	"encoding/json"
 
+	"github.com/ayupov-ayaz/todo/internal/helper"
+
 	"github.com/ayupov-ayaz/todo/internal/delivery/http"
 
 	_errors "github.com/ayupov-ayaz/todo/errors"
@@ -46,7 +48,7 @@ func (h *Handler) SignUp(ctx *fiber.Ctx) error {
 	var user models.User
 
 	if err := json.Unmarshal(ctx.Body(), &user); err != nil {
-		h.logger.Error("unmarshal failed",
+		h.logger.Warn("unmarshal body failed",
 			zap.ByteString("body", ctx.Body()),
 			zap.Error(err))
 
@@ -58,12 +60,7 @@ func (h *Handler) SignUp(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	raw, err := json.Marshal(struct {
-		ID int `json:"id"`
-	}{
-		ID: id,
-	})
-
+	raw, err := helper.MarshalingId(id)
 	if err != nil {
 		h.logger.Error("marshaling response failed", zap.Error(err))
 	}

@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ayupov-ayaz/todo/pkg/services/validator"
+
 	"github.com/ayupov-ayaz/todo/internal/server"
 
 	"github.com/ayupov-ayaz/todo/pkg/services/jwt"
@@ -54,9 +56,12 @@ func initConfig() error {
 	return viper.ReadInConfig()
 }
 
-func authModel(s *fiber.App, db *sqlx.DB, jwtSrv jwt.Service, salt []byte, lifetime time.Duration) {
+func authModel(
+	s *fiber.App, db *sqlx.DB, jwtSrv jwt.Service, val validator.Validator,
+	salt []byte, lifetime time.Duration,
+) {
 	repo := auth.NewPostgresRepository(db)
-	srv := auth.NewService(repo, jwtSrv, salt, lifetime)
+	srv := auth.NewService(repo, val, jwtSrv, salt, lifetime)
 	handler := auth.NewHandler(srv)
 	handler.RunHandler(s)
 }
@@ -104,7 +109,9 @@ func Run() error {
 		LifeTime:   viper.GetDuration("auth.lifetime"),
 	}
 
-	if err := authCfg.Validate(); err != nil {
+	validate := validator.NewBasicValidator()
+
+	if err := validate.Struct(authCfg); err != nil {
 		return err
 	}
 
@@ -116,7 +123,7 @@ func Run() error {
 	jwtSrv := jwt.NewService(authCfg.SigningKey)
 	s := server.NewServer(jwtSrv)
 
-	authModel(s, db, jwtSrv, authCfg.Salt, authCfg.LifeTime)
+	authModel(s, db, jwtSrv, validate, authCfg.Salt, authCfg.LifeTime)
 	listHandler(s, db)
 	itemHandler(s, db)
 

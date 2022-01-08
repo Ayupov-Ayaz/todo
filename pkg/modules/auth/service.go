@@ -8,7 +8,7 @@ import (
 	_errors "github.com/ayupov-ayaz/todo/errors"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
-	"github.com/go-playground/validator/v10"
+	"github.com/ayupov-ayaz/todo/pkg/services/validator"
 	"go.uber.org/zap"
 )
 
@@ -28,17 +28,17 @@ type CreateToken interface {
 
 type Service struct {
 	repo     AuthorizationRepository
-	validate *validator.Validate
+	validate validator.Validator
 	token    CreateToken
 	salt     []byte
 	lifeTime time.Duration
 	logger   *zap.Logger
 }
 
-func NewService(repo AuthorizationRepository, token CreateToken, salt []byte, lifeTime time.Duration) *Service {
+func NewService(repo AuthorizationRepository, val validator.Validator, token CreateToken, salt []byte, lifeTime time.Duration) *Service {
 	return &Service{
 		repo:     repo,
-		validate: validator.New(),
+		validate: val,
 		token:    token,
 		salt:     salt,
 		lifeTime: lifeTime,
