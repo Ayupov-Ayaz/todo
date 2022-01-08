@@ -73,9 +73,9 @@ func itemHandler(s *fiber.App, db *sqlx.DB) {
 	handler.RunHandler(s)
 }
 
-func listHandler(s *fiber.App, db *sqlx.DB) {
+func listHandler(s *fiber.App, db *sqlx.DB, val validator.Validator) {
 	repo := list.NewPostgresRepository(db)
-	srv := list.NewHandler(repo)
+	srv := list.NewService(repo, val)
 	handler := list.NewHandler(srv)
 	handler.RunHandler(s)
 
@@ -124,7 +124,7 @@ func Run() error {
 	s := server.NewServer(jwtSrv)
 
 	authModel(s, db, jwtSrv, validate, authCfg.Salt, authCfg.LifeTime)
-	listHandler(s, db)
+	listHandler(s, db, validate)
 	itemHandler(s, db)
 
 	if err := s.Listen(":" + strconv.Itoa(viper.GetInt("server.port"))); err != nil {

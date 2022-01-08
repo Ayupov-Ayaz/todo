@@ -1,16 +1,37 @@
 package list
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/ayupov-ayaz/todo/internal/delivery/http"
+
+	_errors "github.com/ayupov-ayaz/todo/errors"
+	"github.com/ayupov-ayaz/todo/internal/helper"
+
+	"github.com/ayupov-ayaz/todo/internal/models"
+	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
+)
+
+var (
+	ErrInvalidRequest = _errors.BadRequest("invalid request")
+)
 
 type TodoListService interface {
+	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
 }
 
 type Handler struct {
-	srv TodoListService
+	srv    TodoListService
+	logger *zap.Logger
 }
 
 func NewHandler(srv TodoListService) *Handler {
-	return &Handler{srv: srv}
+	return &Handler{
+		srv:    srv,
+		logger: zap.L().Named("list_handler"),
+	}
 }
 
 func (h *Handler) RunHandler(router fiber.Router) {
@@ -24,6 +45,26 @@ func (h *Handler) RunHandler(router fiber.Router) {
 }
 
 func (h Handler) Create(ctx *fiber.Ctx) error {
+	var list models.TodoList
+
+	if err := json.Unmarshal(ctx.Body(), &list); err != nil {
+		h.logger.Warn("unmarshal body failed", zap.Error(err))
+		return ErrInvalidRequest
+	}
+
+	userID := helper.GetUserID(ctx)
+
+	id, err := h.srv.Create(ctx.UserContext(), userID, list)
+	if err != nil {
+		return err
+	}
+
+	raw, err := helper.MarshalingId(id)
+	if err != nil {
+		h.logger.Error("marshaling response failed", zap.Error(err))
+	}
+
+	http.SendJson(ctx, raw, 200)
 
 	return nil
 }
