@@ -18,19 +18,6 @@ var (
 	ErrListNotFound = _errors.NotFound("list not found or list does not belong to you")
 )
 
-const (
-	create       = `INSERT INTO todo_list (title, description) VALUES ($1, $2) RETURNING id;`
-	linkListUser = `INSERT INTO users_lists (user_id, list_id) VALUES ($1, $2);`
-	getAll       = `SELECT tl.id, tl.title 
-					FROM todo_list tl 
-					INNER JOIN users_lists ul on tl.id = ul.list_id 
-					WHERE ul.user_id = $1;`
-	getList = `SELECT tl.id, tl.title, tl.description 
-					FROM todo_list tl
-					INNER JOIN users_lists ul on tl.id = ul.list_id
-					WHERE ul.user_id = $1 AND ul.list_id = $2;`
-)
-
 type PostgresRepository struct {
 	db *sqlx.DB
 }
@@ -42,6 +29,11 @@ func NewPostgresRepository(db *sqlx.DB) *PostgresRepository {
 }
 
 func (r *PostgresRepository) Create(_ context.Context, userID int, list models.TodoList) (int, error) {
+	const (
+		create       = `INSERT INTO todo_list (title, description) VALUES ($1, $2) RETURNING id;`
+		linkListUser = `INSERT INTO users_lists (user_id, list_id) VALUES ($1, $2);`
+	)
+
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, fmt.Errorf("create transaction failed: %w", err)
@@ -68,6 +60,11 @@ func (r *PostgresRepository) Create(_ context.Context, userID int, list models.T
 }
 
 func (r *PostgresRepository) GetAll(_ context.Context, userID int) ([]models.TodoList, error) {
+	const getAll = `SELECT tl.id, tl.title 
+					FROM todo_list tl 
+					INNER JOIN users_lists ul on tl.id = ul.list_id 
+					WHERE ul.user_id = $1;`
+
 	var lists []models.TodoList
 
 	err := r.db.Select(&lists, getAll, userID)
@@ -76,6 +73,11 @@ func (r *PostgresRepository) GetAll(_ context.Context, userID int) ([]models.Tod
 }
 
 func (r *PostgresRepository) Get(_ context.Context, userID int, listID int) (models.TodoList, error) {
+	const getList = `SELECT tl.id, tl.title, tl.description 
+					FROM todo_list tl
+					INNER JOIN users_lists ul on tl.id = ul.list_id
+					WHERE ul.user_id = $1 AND ul.list_id = $2;`
+
 	var list models.TodoList
 
 	err := r.db.Get(&list, getList, userID, listID)
