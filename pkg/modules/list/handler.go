@@ -23,6 +23,7 @@ type TodoListService interface {
 	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
 	Get(ctx context.Context, userID, listID int) (models.TodoList, error)
 	Update(ctx context.Context, userID, listID int, list UpdateTodoList) error
+	Delete(ctx context.Context, userID, listID int) error
 }
 
 type Handler struct {
@@ -158,7 +159,27 @@ func (h *Handler) Update(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Delete(ctx *fiber.Ctx) error {
+func (h *Handler) Delete(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	listID, err := ctx.ParamsInt("id")
+	if err != nil {
+		h.logger.Warn("param id doesn't send", zap.Error(err))
+		return err
+	}
+
+	if err := h.srv.Delete(ctx.UserContext(), userID, listID); err != nil {
+		return err
+	}
+
+	if err := ctx.SendStatus(200); err != nil {
+		h.logger.Error("fiber: failed to send status", zap.Error(err))
+		return err
+	}
 
 	return nil
 }

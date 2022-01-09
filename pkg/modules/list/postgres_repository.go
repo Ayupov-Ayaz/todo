@@ -122,3 +122,15 @@ func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input
 
 	return err
 }
+
+func (r *PostgresRepository) Delete(_ context.Context, userID, listID int) error {
+	const query = `DELETE FROM todo_list tl 
+					USING users_lists ul 
+					WHERE tl.id = ul.list_id 
+					AND ul.user_id = $1 
+					AND ul.list_id = $2`
+
+	_, err := r.db.Exec(query, userID, listID)
+
+	return err
+}

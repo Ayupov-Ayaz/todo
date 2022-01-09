@@ -15,6 +15,7 @@ type TodoListRepository interface {
 	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
 	Get(ctx context.Context, userID int, listID int) (models.TodoList, error)
 	Update(ctx context.Context, userID, listID int, input UpdateTodoList) error
+	Delete(ctx context.Context, userID, listID int) error
 }
 
 type Service struct {
@@ -80,7 +81,20 @@ func (s *Service) Update(ctx context.Context, userID, listID int, input UpdateTo
 	}
 
 	if err := s.repo.Update(ctx, userID, listID, input); err != nil {
-		s.logger.Error("update list failed",
+		s.logger.Error("failed to update the list",
+			zap.Int("user_id", userID),
+			zap.Int("list_id", listID),
+			zap.Error(err))
+
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) Delete(ctx context.Context, userID, listID int) error {
+	if err := s.repo.Delete(ctx, userID, listID); err != nil {
+		s.logger.Error("failed to delete the list",
 			zap.Int("user_id", userID),
 			zap.Int("list_id", listID),
 			zap.Error(err))
