@@ -17,6 +17,7 @@ import (
 
 type TodoItemService interface {
 	Create(ctx context.Context, userID, listID int, item models.Item) (int, error)
+	GetAll(ctx context.Context, userID, listID int) ([]models.Item, error)
 }
 
 type Handler struct {
@@ -41,6 +42,10 @@ func (h *Handler) RunHandler(router fiber.Router) {
 	group.Delete("/:itemID", h.Delete)
 }
 
+func getListID(ctx *fiber.Ctx) (int, error) {
+	return ctx.ParamsInt("listID")
+}
+
 func (h *Handler) Create(ctx *fiber.Ctx) error {
 	userID, err := helper.GetUserID(ctx)
 	if err != nil {
@@ -48,7 +53,7 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	listID, err := ctx.ParamsInt("listID")
+	listID, err := getListID(ctx)
 	if err != nil {
 		h.logger.Warn("param list id doesn't send", zap.Error(err))
 		return err
@@ -76,12 +81,36 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Get(ctx *fiber.Ctx) error {
+func (h *Handler) GetAll(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	listID, err := getListID(ctx)
+	if err != nil {
+		h.logger.Warn("param list id doesn't send", zap.Error(err))
+		return err
+	}
+
+	items, err := h.srv.GetAll(ctx.UserContext(), userID, listID)
+	if err != nil {
+		return err
+	}
+
+	raw, err := json.Marshal(getAllItemsResponse{Items: items})
+	if err != nil {
+		h.logger.Error("marshaling get all items response", zap.Error(err))
+		return err
+	}
+
+	http.SendJson(ctx, raw, 200)
 
 	return nil
 }
 
-func (h Handler) GetAll(ctx *fiber.Ctx) error {
+func (h Handler) Get(ctx *fiber.Ctx) error {
 
 	return nil
 }

@@ -17,6 +17,7 @@ var (
 
 type Repository interface {
 	Create(ctx context.Context, listID int, item models.Item) (int, error)
+	GetAll(ctx context.Context, listID int) ([]models.Item, error)
 }
 
 type UsersListRepository interface {
@@ -39,19 +40,14 @@ func NewService(repo Repository, listRepo UsersListRepository, validate validato
 	}
 }
 
-func (s *Service) Create(ctx context.Context, userID, listID int, item models.Item) (int, error) {
-	if err := s.validate.Struct(item); err != nil {
-		s.logger.Warn("validation failed", zap.Error(err))
-		return 0, err
-	}
-
+func (s *Service) checkListOwner(ctx context.Context, userID, listID int) error {
 	userList, err := s.listRepo.GetListUserByListId(ctx, listID)
 	if err != nil {
 		s.logger.Error("get relation users_lists failed",
 			zap.Int("list_id", listID),
 			zap.Error(err))
 
-		return 0, err
+		return err
 	}
 
 	if userList.UserID != userID {
@@ -59,7 +55,20 @@ func (s *Service) Create(ctx context.Context, userID, listID int, item models.It
 			zap.Int("list_id", listID),
 			zap.Int("user_id", userID))
 
-		return 0, ErrListDoesntBelongsUser
+		return ErrListDoesntBelongsUser
+	}
+
+	return nil
+}
+
+func (s *Service) Create(ctx context.Context, userID, listID int, item models.Item) (int, error) {
+	if err := s.validate.Struct(item); err != nil {
+		s.logger.Warn("validation failed", zap.Error(err))
+		return 0, err
+	}
+
+	if err := s.checkListOwner(ctx, userID, listID); err != nil {
+		return 0, err
 	}
 
 	id, err := s.itemRepo.Create(ctx, listID, item)
@@ -69,4 +78,22 @@ func (s *Service) Create(ctx context.Context, userID, listID int, item models.It
 	}
 
 	return id, nil
+}
+
+func (s *Service) GetAll(ctx context.Context, userID, listID int) ([]models.Item, error) {
+	if err := s.checkListOwner(ctx, userID, listID); err != nil {
+		return nil, err
+	}
+
+	items, err := s.itemRepo.GetAll(ctx, listID)
+	if err != nil {
+		s.logger.Error("get all items failed",
+			zap.Int("user_id", userID),
+			zap.Int("list_id", listID),
+			zap.Error(err))
+
+		return nil, err
+	}
+
+	return items, nil
 }
