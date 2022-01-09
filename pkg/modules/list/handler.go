@@ -22,6 +22,7 @@ type TodoListService interface {
 	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
 	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
 	Get(ctx context.Context, userID, listID int) (models.TodoList, error)
+	Update(ctx context.Context, userID, listID int, list UpdateTodoList) error
 }
 
 type Handler struct {
@@ -74,10 +75,6 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 	return nil
 }
 
-type getAllListResponse struct {
-	List []models.TodoList `json:"list"`
-}
-
 func (h *Handler) GetLists(ctx *fiber.Ctx) error {
 	userID, err := helper.GetUserID(ctx)
 	if err != nil {
@@ -101,7 +98,7 @@ func (h *Handler) GetLists(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Get(ctx *fiber.Ctx) error {
+func (h *Handler) Get(ctx *fiber.Ctx) error {
 	userID, err := helper.GetUserID(ctx)
 	if err != nil {
 		h.logger.Error("get user id from ctx failed", zap.Error(err))
@@ -130,7 +127,33 @@ func (h Handler) Get(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Update(ctx *fiber.Ctx) error {
+func (h *Handler) Update(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	listID, err := ctx.ParamsInt("id")
+	if err != nil {
+		h.logger.Warn("param id doesn't send", zap.Error(err))
+		return err
+	}
+
+	var input UpdateTodoList
+	if err := json.Unmarshal(ctx.Body(), &input); err != nil {
+		h.logger.Warn("unmarshal body failed", zap.Error(err))
+		return ErrInvalidRequest
+	}
+
+	if err := h.srv.Update(ctx.UserContext(), userID, listID, input); err != nil {
+		return err
+	}
+
+	if err := ctx.SendStatus(200); err != nil {
+		h.logger.Error("fiber send status failed", zap.Error(err))
+		return err
+	}
 
 	return nil
 }

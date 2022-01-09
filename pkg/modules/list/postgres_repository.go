@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	_errors "github.com/ayupov-ayaz/todo/errors"
 
@@ -82,4 +84,41 @@ func (r *PostgresRepository) Get(_ context.Context, userID int, listID int) (mod
 	}
 
 	return list, err
+}
+
+func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input UpdateTodoList) error {
+	setValues := make([]string, 0, 2)
+	args := make([]interface{}, 0, 2)
+	argID := 1
+
+	if input.Title != nil {
+		setValues = append(setValues, "title=$"+strconv.Itoa(argID))
+		args = append(args, *input.Title)
+		argID++
+	}
+
+	if input.Description != nil {
+		setValues = append(setValues, "description=$"+strconv.Itoa(argID))
+		args = append(args, *input.Description)
+		argID++
+	}
+
+	args = append(args, userID, listID)
+
+	//title=$1
+	//description=$1
+	//title=$1, descriptions=$2
+	setQuery := strings.Join(setValues, ", ")
+
+	const update = `UPDATE todo_list tl SET %s 
+				FROM users_lists ul 
+				WHERE tl.id = ul.list_id 
+				AND ul.user_id = $%d
+				AND ul.list_id = $%d;`
+
+	query := fmt.Sprintf(update, setQuery, argID, argID+1)
+
+	_, err := r.db.Exec(query, args...)
+
+	return err
 }

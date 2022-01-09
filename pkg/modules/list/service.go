@@ -14,6 +14,7 @@ type TodoListRepository interface {
 	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
 	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
 	Get(ctx context.Context, userID int, listID int) (models.TodoList, error)
+	Update(ctx context.Context, userID, listID int, input UpdateTodoList) error
 }
 
 type Service struct {
@@ -64,11 +65,28 @@ func (s *Service) Get(ctx context.Context, userID, listID int) (models.TodoList,
 		s.logger.Error("get list failed",
 			zap.Int("user_id", userID),
 			zap.Int("list_id", listID),
-			zap.Error(err),
-		)
+			zap.Error(err))
 
 		return models.TodoList{}, err
 	}
 
 	return list, nil
+}
+
+func (s *Service) Update(ctx context.Context, userID, listID int, input UpdateTodoList) error {
+	if err := input.Validate(); err != nil {
+		s.logger.Warn("validation failed", zap.Error(err))
+		return err
+	}
+
+	if err := s.repo.Update(ctx, userID, listID, input); err != nil {
+		s.logger.Error("update list failed",
+			zap.Int("user_id", userID),
+			zap.Int("list_id", listID),
+			zap.Error(err))
+
+		return err
+	}
+
+	return nil
 }
