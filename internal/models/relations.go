@@ -1,9 +1,9 @@
 package models
 
 type ListUser struct {
-	ID     int `db:"id"`
-	UserID int `db:"user_id"`
-	ListID int `db:"list_id"`
+	ID     int
+	UserID int
+	ListID int
 }
 
 type ListItem struct {
