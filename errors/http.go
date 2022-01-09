@@ -16,6 +16,10 @@ func BadRequest(mess string) HttpStatusError {
 	return NewHttpCodeError(400, mess)
 }
 
+func NotFound(mess string) HttpStatusError {
+	return NewHttpCodeError(404, mess)
+}
+
 func Forbidden(mess string) HttpStatusError {
 	return NewHttpCodeError(403, mess)
 }

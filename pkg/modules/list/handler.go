@@ -21,6 +21,7 @@ var (
 type TodoListService interface {
 	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
 	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
+	Get(ctx context.Context, userID, listID int) (models.TodoList, error)
 }
 
 type Handler struct {
@@ -101,6 +102,30 @@ func (h *Handler) GetLists(ctx *fiber.Ctx) error {
 }
 
 func (h Handler) Get(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	listID, err := ctx.ParamsInt("id")
+	if err != nil {
+		h.logger.Warn("param id doesn't send", zap.Error(err))
+		return err
+	}
+
+	list, err := h.srv.Get(ctx.UserContext(), userID, listID)
+	if err != nil {
+		return err
+	}
+
+	raw, err := json.Marshal(list)
+	if err != nil {
+		h.logger.Error("marshaling list failed", zap.Error(err))
+		return err
+	}
+
+	http.SendJson(ctx, raw, 200)
 
 	return nil
 }
