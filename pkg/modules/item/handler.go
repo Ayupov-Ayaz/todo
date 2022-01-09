@@ -1,7 +1,14 @@
 package item
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
+
+	"github.com/ayupov-ayaz/todo/internal/delivery/http"
+
+	"github.com/ayupov-ayaz/todo/internal/models"
+
+	"go.uber.org/zap"
 
 	"github.com/ayupov-ayaz/todo/internal/helper"
 
@@ -9,29 +16,62 @@ import (
 )
 
 type TodoItemService interface {
+	Create(ctx context.Context, userID, listID int, item models.Item) (int, error)
 }
 
 type Handler struct {
-	srv TodoItemService
+	srv    TodoItemService
+	logger *zap.Logger
 }
 
 func NewHandler(srv TodoItemService) *Handler {
-	return &Handler{srv: srv}
+	return &Handler{
+		srv:    srv,
+		logger: zap.L().Named("item_handler"),
+	}
 }
 
 func (h *Handler) RunHandler(router fiber.Router) {
-	group := router.Group("/item")
+	group := router.Group("/:listID/item")
 
 	group.Post("/", h.Create)
-	group.Get("/", h.GetList)
-	group.Get("/:id", h.Get)
-	group.Patch("/:id", h.Update)
-	group.Delete("/:id", h.Delete)
+	group.Get("/", h.GetAll)
+	group.Get("/:itemID", h.Get)
+	group.Patch("/:itemID", h.Update)
+	group.Delete("/:itemID", h.Delete)
 }
 
 func (h *Handler) Create(ctx *fiber.Ctx) error {
-	userID, _ := helper.GetUserID(ctx)
-	fmt.Println(userID)
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	listID, err := ctx.ParamsInt("listID")
+	if err != nil {
+		h.logger.Warn("param list id doesn't send", zap.Error(err))
+		return err
+	}
+
+	var item models.Item
+	if err := json.Unmarshal(ctx.Body(), &item); err != nil {
+		h.logger.Warn("unmarshal body failed", zap.Error(err))
+		return err
+	}
+
+	id, err := h.srv.Create(ctx.UserContext(), userID, listID, item)
+	if err != nil {
+		return err
+	}
+
+	raw, err := helper.MarshalingId(id)
+	if err != nil {
+		h.logger.Error("marshaling id failed", zap.Error(err))
+		return err
+	}
+
+	http.SendJson(ctx, raw, 201)
 
 	return nil
 }
@@ -41,7 +81,7 @@ func (h Handler) Get(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) GetList(ctx *fiber.Ctx) error {
+func (h Handler) GetAll(ctx *fiber.Ctx) error {
 
 	return nil
 }

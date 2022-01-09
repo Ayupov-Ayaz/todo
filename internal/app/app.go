@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ayupov-ayaz/todo/pkg/modules/relations"
+
 	"github.com/ayupov-ayaz/todo/pkg/services/validator"
 
 	"github.com/ayupov-ayaz/todo/internal/server"
@@ -66,9 +68,10 @@ func authModel(
 	handler.RunHandler(s)
 }
 
-func itemHandler(s *fiber.App, db *sqlx.DB) {
+func itemHandler(s *fiber.App, db *sqlx.DB, val validator.Validator) {
 	repo := item.NewPostgresRepository(db)
-	srv := item.NewHandler(repo)
+	relationRepo := relations.NewPostgresRepository(db)
+	srv := item.NewService(repo, relationRepo, val)
 	handler := item.NewHandler(srv)
 	handler.RunHandler(s)
 }
@@ -125,7 +128,7 @@ func Run() error {
 
 	authModel(s, db, jwtSrv, validate, authCfg.Salt, authCfg.LifeTime)
 	listHandler(s, db, validate)
-	itemHandler(s, db)
+	itemHandler(s, db, validate)
 
 	if err := s.Listen(":" + strconv.Itoa(viper.GetInt("server.port"))); err != nil {
 		return fmt.Errorf("occured while running http server: %w", err)

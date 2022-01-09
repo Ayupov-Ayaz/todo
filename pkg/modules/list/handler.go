@@ -152,7 +152,7 @@ func (h *Handler) Update(ctx *fiber.Ctx) error {
 	}
 
 	if err := ctx.SendStatus(200); err != nil {
-		h.logger.Error("fiber send status failed", zap.Error(err))
+		h.logger.Error("fiber: failed to send status", zap.Error(err))
 		return err
 	}
 
