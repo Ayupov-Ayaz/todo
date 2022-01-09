@@ -126,13 +126,39 @@ func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input
 }
 
 func (r *PostgresRepository) Delete(_ context.Context, userID, listID int) error {
-	const query = `DELETE FROM todo_list tl 
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("create transaction failed: %w", err)
+	}
+
+	const deleteListItems = `DELETE FROM todo_item ti
+							USING list_items li, users_lists ul
+							WHERE li.item_id = ti.id
+							AND ul.user_id = $1  
+							AND li.list_id = $2;`
+
+	_, err = tx.Exec(deleteListItems, userID, listID)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete items failed: %w", err)
+	}
+
+	const deleteList = `DELETE FROM todo_list tl 
 					USING users_lists ul 
 					WHERE tl.id = ul.list_id 
 					AND ul.user_id = $1 
-					AND ul.list_id = $2`
+					AND ul.list_id = $2;`
 
-	_, err := r.db.Exec(query, userID, listID)
+	_, err = tx.Exec(deleteList, userID, listID)
+	if err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("delete list failed: %w", err)
+	}
 
-	return err
+	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
+		return fmt.Errorf("close transaction failed: %w", err)
+	}
+
+	return nil
 }
