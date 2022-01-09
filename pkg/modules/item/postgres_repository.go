@@ -2,10 +2,18 @@ package item
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+
+	_errors "github.com/ayupov-ayaz/todo/errors"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/jmoiron/sqlx"
+)
+
+var (
+	ErrItemNotFound = _errors.NotFound("item not found")
 )
 
 type PostgresRepository struct {
@@ -51,7 +59,7 @@ func (p *PostgresRepository) GetAll(_ context.Context, listID int) ([]models.Ite
 	const getAll = `SELECT ti.id, ti.title, ti.done
 					FROM todo_item ti 
 					INNER JOIN list_items li on ti.id = li.item_id
-					WHERE li.list_id = $1`
+					WHERE li.list_id = $1;`
 
 	var items []models.Item
 
@@ -60,4 +68,18 @@ func (p *PostgresRepository) GetAll(_ context.Context, listID int) ([]models.Ite
 	}
 
 	return items, nil
+}
+
+func (p *PostgresRepository) Get(_ context.Context, itemID int) (models.Item, error) {
+	const get = `SELECT id, title, description, done FROM todo_item WHERE id = $1;`
+
+	var item models.Item
+
+	if err := p.db.Get(&item, get, itemID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Item{}, ErrItemNotFound
+		}
+	}
+
+	return item, nil
 }

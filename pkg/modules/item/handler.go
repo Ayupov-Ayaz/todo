@@ -18,6 +18,7 @@ import (
 type TodoItemService interface {
 	Create(ctx context.Context, userID, listID int, item models.Item) (int, error)
 	GetAll(ctx context.Context, userID, listID int) ([]models.Item, error)
+	Get(ctx context.Context, userID, itemID int) (models.Item, error)
 }
 
 type Handler struct {
@@ -33,17 +34,22 @@ func NewHandler(srv TodoItemService) *Handler {
 }
 
 func (h *Handler) RunHandler(router fiber.Router) {
-	group := router.Group("/:listID/item")
+	groupList := router.Group("/:listID/item")
+	groupList.Post("/", h.Create)
+	groupList.Get("/", h.GetAll)
 
-	group.Post("/", h.Create)
-	group.Get("/", h.GetAll)
-	group.Get("/:itemID", h.Get)
-	group.Patch("/:itemID", h.Update)
-	group.Delete("/:itemID", h.Delete)
+	groupItem := router.Group("item/:itemID")
+	groupItem.Get("", h.Get)
+	groupItem.Patch("", h.Update)
+	groupItem.Delete("", h.Delete)
 }
 
 func getListID(ctx *fiber.Ctx) (int, error) {
 	return ctx.ParamsInt("listID")
+}
+
+func getItemID(ctx *fiber.Ctx) (int, error) {
+	return ctx.ParamsInt("itemID")
 }
 
 func (h *Handler) Create(ctx *fiber.Ctx) error {
@@ -110,7 +116,31 @@ func (h *Handler) GetAll(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Get(ctx *fiber.Ctx) error {
+func (h *Handler) Get(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	itemID, err := getItemID(ctx)
+	if err != nil {
+		h.logger.Warn("param item id doesn't send", zap.Error(err))
+		return err
+	}
+
+	item, err := h.srv.Get(ctx.UserContext(), userID, itemID)
+	if err != nil {
+		return err
+	}
+
+	raw, err := json.Marshal(item)
+	if err != nil {
+		h.logger.Error("marshaling item failed", zap.Error(err))
+		return err
+	}
+
+	http.SendJson(ctx, raw, 200)
 
 	return nil
 }

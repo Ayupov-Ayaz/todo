@@ -2,6 +2,9 @@ package item
 
 import (
 	"context"
+	"errors"
+
+	"github.com/ayupov-ayaz/todo/pkg/modules/relations"
 
 	_errors "github.com/ayupov-ayaz/todo/errors"
 
@@ -12,16 +15,19 @@ import (
 )
 
 var (
-	ErrListDoesntBelongsUser = _errors.Forbidden("list doesn't belongs user")
+	ErrListDoesntBelongsUser = _errors.Forbidden("list doesn't belong user")
+	ErrItemDoesntBelongUser  = _errors.Forbidden("item doesn't belong user")
 )
 
 type Repository interface {
 	Create(ctx context.Context, listID int, item models.Item) (int, error)
 	GetAll(ctx context.Context, listID int) ([]models.Item, error)
+	Get(ctx context.Context, itemID int) (models.Item, error)
 }
 
 type UsersListRepository interface {
 	GetListUserByListId(ctx context.Context, listID int) (models.ListUser, error)
+	GetListUserByItemId(ctx context.Context, itemID int) (models.ListUser, error)
 }
 
 type Service struct {
@@ -56,6 +62,31 @@ func (s *Service) checkListOwner(ctx context.Context, userID, listID int) error 
 			zap.Int("user_id", userID))
 
 		return ErrListDoesntBelongsUser
+	}
+
+	return nil
+}
+
+func (s *Service) checkItemOwner(ctx context.Context, userID, itemID int) error {
+	userList, err := s.listRepo.GetListUserByItemId(ctx, itemID)
+	if err != nil {
+		if errors.Is(err, relations.ErrListNotFound) {
+			err = ErrItemNotFound
+		}
+
+		s.logger.Error("get relation users_lists failed",
+			zap.Int("item_id", itemID),
+			zap.Error(err))
+
+		return err
+	}
+
+	if userList.UserID != userID {
+		s.logger.Error("item doesn't belongs this user",
+			zap.Int("item_id", itemID),
+			zap.Int("user_id", userID))
+
+		return ErrItemDoesntBelongUser
 	}
 
 	return nil
@@ -96,4 +127,21 @@ func (s *Service) GetAll(ctx context.Context, userID, listID int) ([]models.Item
 	}
 
 	return items, nil
+}
+
+func (s *Service) Get(ctx context.Context, userID, itemID int) (models.Item, error) {
+	if err := s.checkItemOwner(ctx, userID, itemID); err != nil {
+		return models.Item{}, err
+	}
+
+	item, err := s.itemRepo.Get(ctx, itemID)
+	if err != nil {
+		s.logger.Error("get item by id failed",
+			zap.Int("item_id", itemID),
+			zap.Error(err))
+
+		return models.Item{}, err
+	}
+
+	return item, nil
 }
