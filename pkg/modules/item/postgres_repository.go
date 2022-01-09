@@ -48,7 +48,7 @@ func (p *PostgresRepository) Create(_ context.Context, listID int, item models.I
 }
 
 func (p *PostgresRepository) GetAll(_ context.Context, listID int) ([]models.Item, error) {
-	const getAll = `SELECT ti.id, ti.title 
+	const getAll = `SELECT ti.id, ti.title, ti.done
 					FROM todo_item ti 
 					INNER JOIN list_items li on ti.id = li.item_id
 					WHERE li.list_id = $1`
