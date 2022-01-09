@@ -70,12 +70,15 @@ func (p *PostgresRepository) GetAll(_ context.Context, listID int) ([]models.Ite
 	return items, nil
 }
 
-func (p *PostgresRepository) Get(_ context.Context, itemID int) (models.Item, error) {
-	const get = `SELECT id, title, description, done FROM todo_item WHERE id = $1;`
+func (p *PostgresRepository) Get(_ context.Context, userID, itemID int) (models.Item, error) {
+	const get = `SELECT ti.id, ti.title, ti.description, ti.done FROM todo_item ti
+					INNER JOIN list_items li ON li.item_id = ti.id
+					INNER JOIN users_lists ul ON ul.list_id = li.list_id
+				WHERE ul.user_id = $1 AND ti.id = $2;`
 
 	var item models.Item
 
-	if err := p.db.Get(&item, get, itemID); err != nil {
+	if err := p.db.Get(&item, get, userID, itemID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Item{}, ErrItemNotFound
 		}

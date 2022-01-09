@@ -22,7 +22,7 @@ var (
 type Repository interface {
 	Create(ctx context.Context, listID int, item models.Item) (int, error)
 	GetAll(ctx context.Context, listID int) ([]models.Item, error)
-	Get(ctx context.Context, itemID int) (models.Item, error)
+	Get(ctx context.Context, userID, itemID int) (models.Item, error)
 	Delete(ctx context.Context, userID, itemID int) error
 }
 
@@ -131,11 +131,7 @@ func (s *Service) GetAll(ctx context.Context, userID, listID int) ([]models.Item
 }
 
 func (s *Service) Get(ctx context.Context, userID, itemID int) (models.Item, error) {
-	if err := s.checkItemOwner(ctx, userID, itemID); err != nil {
-		return models.Item{}, err
-	}
-
-	item, err := s.itemRepo.Get(ctx, itemID)
+	item, err := s.itemRepo.Get(ctx, userID, itemID)
 	if err != nil {
 		s.logger.Error("get item by id failed",
 			zap.Int("item_id", itemID),
