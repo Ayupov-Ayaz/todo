@@ -83,3 +83,17 @@ func (p *PostgresRepository) Get(_ context.Context, itemID int) (models.Item, er
 
 	return item, nil
 }
+
+func (p *PostgresRepository) Delete(ctx context.Context, userID, itemID int) error {
+	const query = `DELETE FROM todo_item ti 
+						USING list_items li, users_lists ul 
+					WHERE ti.id = li.item_id 
+						AND li.list_id = ul.list_id
+						AND ul.user_id = $1 AND ti.id = $2;`
+
+	if _, err := p.db.Exec(query, userID, itemID); err != nil {
+		return err
+	}
+
+	return nil
+}

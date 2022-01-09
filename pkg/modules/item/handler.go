@@ -19,6 +19,7 @@ type TodoItemService interface {
 	Create(ctx context.Context, userID, listID int, item models.Item) (int, error)
 	GetAll(ctx context.Context, userID, listID int) ([]models.Item, error)
 	Get(ctx context.Context, userID, itemID int) (models.Item, error)
+	Delete(ctx context.Context, userID, itemID int) error
 }
 
 type Handler struct {
@@ -150,7 +151,24 @@ func (h Handler) Update(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func (h Handler) Delete(ctx *fiber.Ctx) error {
+func (h *Handler) Delete(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Error("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	itemID, err := getItemID(ctx)
+	if err != nil {
+		h.logger.Warn("param item id doesn't send", zap.Error(err))
+		return err
+	}
+
+	if err := h.srv.Delete(ctx.UserContext(), userID, itemID); err != nil {
+		return err
+	}
+
+	http.SendOk(ctx, 200)
 
 	return nil
 }

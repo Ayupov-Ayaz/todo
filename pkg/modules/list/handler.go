@@ -151,10 +151,7 @@ func (h *Handler) Update(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if err := ctx.SendStatus(200); err != nil {
-		h.logger.Error("fiber: failed to send status", zap.Error(err))
-		return err
-	}
+	http.SendOk(ctx, 200)
 
 	return nil
 }
@@ -176,10 +173,7 @@ func (h *Handler) Delete(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if err := ctx.SendStatus(200); err != nil {
-		h.logger.Error("fiber: failed to send status", zap.Error(err))
-		return err
-	}
+	http.SendOk(ctx, 200)
 
 	return nil
 }

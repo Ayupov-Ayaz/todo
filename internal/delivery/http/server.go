@@ -24,3 +24,7 @@ func NewServer(cfg Cfg) *fiber.App {
 		ErrorHandler: ErrorHandler(),
 	})
 }
+
+func SendOk(ctx *fiber.Ctx, httpCode int) {
+	SendJson(ctx, []byte(`{"status":"ok"}`), httpCode)
+}

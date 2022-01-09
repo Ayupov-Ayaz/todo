@@ -23,6 +23,7 @@ type Repository interface {
 	Create(ctx context.Context, listID int, item models.Item) (int, error)
 	GetAll(ctx context.Context, listID int) ([]models.Item, error)
 	Get(ctx context.Context, itemID int) (models.Item, error)
+	Delete(ctx context.Context, userID, itemID int) error
 }
 
 type UsersListRepository interface {
@@ -144,4 +145,17 @@ func (s *Service) Get(ctx context.Context, userID, itemID int) (models.Item, err
 	}
 
 	return item, nil
+}
+
+func (s *Service) Delete(ctx context.Context, userID, itemID int) error {
+	if err := s.itemRepo.Delete(ctx, userID, itemID); err != nil {
+		s.logger.Error("delete item failed",
+			zap.Int("user_id", userID),
+			zap.Int("item_id", itemID),
+			zap.Error(err))
+
+		return err
+	}
+
+	return nil
 }
