@@ -1,16 +1,13 @@
-package auth
+package repositories
 
 import (
 	"database/sql"
 	"errors"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	"github.com/ayupov-ayaz/todo/pkg/modules/auth"
+
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/jmoiron/sqlx"
-)
-
-var (
-	ErrAuthorizationFailed = _errors.Forbidden("authorization failed")
 )
 
 const (
@@ -54,7 +51,7 @@ func (r *PostgresRepository) Get(username, password string) (models.User, error)
 	err := r.db.Get(&user, get, username, password)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		err = ErrAuthorizationFailed
+		err = auth.ErrAuthorizationFailed
 	}
 
 	return user, err

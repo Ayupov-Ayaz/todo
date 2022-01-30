@@ -1,4 +1,4 @@
-package item
+package usecase
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/ayupov-ayaz/todo/pkg/modules/relations"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	"github.com/ayupov-ayaz/todo/pkg/modules/item"
 
 	"github.com/ayupov-ayaz/todo/pkg/services/validator"
 
@@ -14,31 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	ErrListDoesntBelongsUser = _errors.Forbidden("list doesn't belong user")
-	ErrItemDoesntBelongUser  = _errors.Forbidden("item doesn't belong user")
-)
-
-type Repository interface {
-	Create(ctx context.Context, listID int, item models.Item) (int, error)
-	GetAll(ctx context.Context, listID int) ([]models.Item, error)
-	Get(ctx context.Context, userID, itemID int) (models.Item, error)
-	Delete(ctx context.Context, userID, itemID int) error
-}
-
-type UsersListRepository interface {
-	GetListUserByListId(ctx context.Context, listID int) (models.ListUser, error)
-	GetListUserByItemId(ctx context.Context, itemID int) (models.ListUser, error)
-}
-
 type Service struct {
-	itemRepo Repository
-	listRepo UsersListRepository
+	itemRepo item.Repository
+	listRepo item.UsersListRepository
 	validate validator.Validator
 	logger   *zap.Logger
 }
 
-func NewService(repo Repository, listRepo UsersListRepository, validate validator.Validator) *Service {
+func NewUseCase(repo item.Repository, listRepo item.UsersListRepository, validate validator.Validator) *Service {
 	return &Service{
 		itemRepo: repo,
 		listRepo: listRepo,
@@ -62,7 +45,7 @@ func (s *Service) checkListOwner(ctx context.Context, userID, listID int) error 
 			zap.Int("list_id", listID),
 			zap.Int("user_id", userID))
 
-		return ErrListDoesntBelongsUser
+		return item.ErrListDoesntBelongsUser
 	}
 
 	return nil
@@ -72,7 +55,7 @@ func (s *Service) checkItemOwner(ctx context.Context, userID, itemID int) error 
 	userList, err := s.listRepo.GetListUserByItemId(ctx, itemID)
 	if err != nil {
 		if errors.Is(err, relations.ErrListNotFound) {
-			err = ErrItemNotFound
+			err = item.ErrItemNotFound
 		}
 
 		s.logger.Error("get relation users_lists failed",
@@ -87,7 +70,7 @@ func (s *Service) checkItemOwner(ctx context.Context, userID, itemID int) error 
 			zap.Int("item_id", itemID),
 			zap.Int("user_id", userID))
 
-		return ErrItemDoesntBelongUser
+		return item.ErrItemDoesntBelongUser
 	}
 
 	return nil

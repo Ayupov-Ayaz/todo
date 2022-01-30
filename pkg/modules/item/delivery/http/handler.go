@@ -1,8 +1,9 @@
-package item
+package http
 
 import (
-	"context"
 	"encoding/json"
+
+	"github.com/ayupov-ayaz/todo/pkg/modules/item"
 
 	"github.com/ayupov-ayaz/todo/internal/delivery/http"
 
@@ -15,19 +16,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type TodoItemService interface {
-	Create(ctx context.Context, userID, listID int, item models.Item) (int, error)
-	GetAll(ctx context.Context, userID, listID int) ([]models.Item, error)
-	Get(ctx context.Context, userID, itemID int) (models.Item, error)
-	Delete(ctx context.Context, userID, itemID int) error
-}
-
 type Handler struct {
-	srv    TodoItemService
+	srv    item.UseCase
 	logger *zap.Logger
 }
 
-func NewHandler(srv TodoItemService) *Handler {
+func NewHandler(srv item.UseCase) *Handler {
 	return &Handler{
 		srv:    srv,
 		logger: zap.L().Named("item_handler"),
@@ -86,6 +80,10 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 	http.SendJson(ctx, raw, 201)
 
 	return nil
+}
+
+type getAllItemsResponse struct {
+	Items []models.Item `json:"items"`
 }
 
 func (h *Handler) GetAll(ctx *fiber.Ctx) error {

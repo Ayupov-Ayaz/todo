@@ -1,12 +1,12 @@
-package list
+package http
 
 import (
-	"context"
 	"encoding/json"
+
+	"github.com/ayupov-ayaz/todo/pkg/modules/list"
 
 	"github.com/ayupov-ayaz/todo/internal/delivery/http"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
 	"github.com/ayupov-ayaz/todo/internal/helper"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
@@ -14,24 +14,12 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	ErrInvalidRequest = _errors.BadRequest("invalid request")
-)
-
-type TodoListService interface {
-	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
-	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
-	Get(ctx context.Context, userID, listID int) (models.TodoList, error)
-	Update(ctx context.Context, userID, listID int, list UpdateTodoList) error
-	Delete(ctx context.Context, userID, listID int) error
-}
-
 type Handler struct {
-	srv    TodoListService
+	srv    list.UseCase
 	logger *zap.Logger
 }
 
-func NewHandler(srv TodoListService) *Handler {
+func NewHandler(srv list.UseCase) *Handler {
 	return &Handler{
 		srv:    srv,
 		logger: zap.L().Named("list_handler"),
@@ -55,13 +43,13 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	var list models.TodoList
-	if err := json.Unmarshal(ctx.Body(), &list); err != nil {
+	var todoList models.TodoList
+	if err := json.Unmarshal(ctx.Body(), &todoList); err != nil {
 		h.logger.Warn("unmarshal body failed", zap.Error(err))
-		return ErrInvalidRequest
+		return list.ErrInvalidRequest
 	}
 
-	id, err := h.srv.Create(ctx.UserContext(), userID, list)
+	id, err := h.srv.Create(ctx.UserContext(), userID, todoList)
 	if err != nil {
 		return err
 	}
@@ -74,6 +62,10 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 	http.SendJson(ctx, raw, 200)
 
 	return nil
+}
+
+type getAllListResponse struct {
+	List []models.TodoList `json:"list"`
 }
 
 func (h *Handler) GetLists(ctx *fiber.Ctx) error {
@@ -112,12 +104,12 @@ func (h *Handler) Get(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	list, err := h.srv.Get(ctx.UserContext(), userID, listID)
+	todoList, err := h.srv.Get(ctx.UserContext(), userID, listID)
 	if err != nil {
 		return err
 	}
 
-	raw, err := json.Marshal(list)
+	raw, err := json.Marshal(todoList)
 	if err != nil {
 		h.logger.Error("marshaling list failed", zap.Error(err))
 		return err
@@ -141,10 +133,10 @@ func (h *Handler) Update(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	var input UpdateTodoList
+	var input list.UpdateTodoList
 	if err := json.Unmarshal(ctx.Body(), &input); err != nil {
 		h.logger.Warn("unmarshal body failed", zap.Error(err))
-		return ErrInvalidRequest
+		return list.ErrInvalidRequest
 	}
 
 	if err := h.srv.Update(ctx.UserContext(), userID, listID, input); err != nil {

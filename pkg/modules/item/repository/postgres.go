@@ -1,4 +1,4 @@
-package item
+package repository
 
 import (
 	"context"
@@ -6,14 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
-
 	"github.com/ayupov-ayaz/todo/internal/models"
+	"github.com/ayupov-ayaz/todo/pkg/modules/item"
 	"github.com/jmoiron/sqlx"
-)
-
-var (
-	ErrItemNotFound = _errors.NotFound("item not found")
 )
 
 type PostgresRepository struct {
@@ -76,15 +71,15 @@ func (p *PostgresRepository) Get(_ context.Context, userID, itemID int) (models.
 					INNER JOIN users_lists ul ON ul.list_id = li.list_id
 				WHERE ul.user_id = $1 AND ti.id = $2;`
 
-	var item models.Item
+	var _item models.Item
 
-	if err := p.db.Get(&item, get, userID, itemID); err != nil {
+	if err := p.db.Get(&_item, get, userID, itemID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.Item{}, ErrItemNotFound
+			return models.Item{}, item.ErrItemNotFound
 		}
 	}
 
-	return item, nil
+	return _item, nil
 }
 
 func (p *PostgresRepository) Delete(ctx context.Context, userID, itemID int) error {

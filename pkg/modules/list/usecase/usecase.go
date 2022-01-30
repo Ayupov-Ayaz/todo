@@ -1,7 +1,9 @@
-package list
+package usecase
 
 import (
 	"context"
+
+	"github.com/ayupov-ayaz/todo/pkg/modules/list"
 
 	"go.uber.org/zap"
 
@@ -10,21 +12,13 @@ import (
 	"github.com/ayupov-ayaz/todo/internal/models"
 )
 
-type TodoListRepository interface {
-	Create(ctx context.Context, userID int, list models.TodoList) (int, error)
-	GetAll(ctx context.Context, userID int) ([]models.TodoList, error)
-	Get(ctx context.Context, userID int, listID int) (models.TodoList, error)
-	Update(ctx context.Context, userID, listID int, input UpdateTodoList) error
-	Delete(ctx context.Context, userID, listID int) error
-}
-
 type Service struct {
-	repo     TodoListRepository
+	repo     list.Repository
 	validate validator.Validator
 	logger   *zap.Logger
 }
 
-func NewService(repo TodoListRepository, validator validator.Validator) *Service {
+func NewUseCase(repo list.Repository, validator validator.Validator) *Service {
 	return &Service{
 		repo:     repo,
 		validate: validator,
@@ -74,7 +68,7 @@ func (s *Service) Get(ctx context.Context, userID, listID int) (models.TodoList,
 	return list, nil
 }
 
-func (s *Service) Update(ctx context.Context, userID, listID int, input UpdateTodoList) error {
+func (s *Service) Update(ctx context.Context, userID, listID int, input list.UpdateTodoList) error {
 	if err := input.Validate(); err != nil {
 		s.logger.Warn("validation failed", zap.Error(err))
 		return err

@@ -1,4 +1,4 @@
-package list
+package repository
 
 import (
 	"context"
@@ -8,14 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	list2 "github.com/ayupov-ayaz/todo/pkg/modules/list"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/jmoiron/sqlx"
-)
-
-var (
-	ErrListNotFound = _errors.NotFound("list not found or list does not belong to you")
 )
 
 type PostgresRepository struct {
@@ -82,13 +78,13 @@ func (r *PostgresRepository) Get(_ context.Context, userID int, listID int) (mod
 
 	err := r.db.Get(&list, getList, userID, listID)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		err = ErrListNotFound
+		err = list2.ErrListNotFound
 	}
 
 	return list, err
 }
 
-func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input UpdateTodoList) error {
+func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input list2.UpdateTodoList) error {
 	setValues := make([]string, 0, 2)
 	args := make([]interface{}, 0, 2)
 	argID := 1

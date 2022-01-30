@@ -17,7 +17,7 @@ type Service struct {
 	signingKey []byte
 }
 
-func NewService(signingKey []byte) Service {
+func NewUseCase(signingKey []byte) Service {
 	return Service{signingKey: signingKey}
 }
 

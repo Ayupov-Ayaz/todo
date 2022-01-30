@@ -1,41 +1,28 @@
-package auth
+package usecase
 
 import (
 	"crypto/sha1"
 	"fmt"
 	"time"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	"github.com/ayupov-ayaz/todo/pkg/modules/auth"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/ayupov-ayaz/todo/pkg/services/validator"
 	"go.uber.org/zap"
 )
 
-var (
-	ErrUsernameIsBusy = _errors.BadRequest("username is busy")
-)
-
-type AuthorizationRepository interface {
-	Create(user models.User) (int, error)
-	Exist(username string) (bool, error)
-	Get(username, password string) (models.User, error)
-}
-
-type CreateToken interface {
-	CreateToken(userID int, lifeTime time.Duration) (string, error)
-}
-
 type Service struct {
-	repo     AuthorizationRepository
+	repo     auth.Repository
 	validate validator.Validator
-	token    CreateToken
+	token    auth.CreateToken
 	salt     []byte
 	lifeTime time.Duration
 	logger   *zap.Logger
 }
 
-func NewService(repo AuthorizationRepository, val validator.Validator, token CreateToken, salt []byte, lifeTime time.Duration) *Service {
+func NewUseCase(repo auth.Repository, val validator.Validator, token auth.CreateToken,
+	salt []byte, lifeTime time.Duration) *Service {
 	return &Service{
 		repo:     repo,
 		validate: val,
@@ -72,7 +59,7 @@ func (s *Service) Create(user models.User) (int, error) {
 
 	if exist {
 		s.logger.Warn("username is busy", zap.String("username", user.Username))
-		return 0, ErrUsernameIsBusy
+		return 0, auth.ErrUsernameIsBusy
 	}
 
 	user.Password = generatePasswordHash(user.Password, s.salt)

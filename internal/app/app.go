@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
-	"github.com/ayupov-ayaz/todo/pkg/modules/relations"
+	"github.com/ayupov-ayaz/todo/pkg/services/db"
 
 	"github.com/ayupov-ayaz/todo/pkg/services/validator"
 
@@ -20,15 +19,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/ayupov-ayaz/todo/pkg/repository"
-
 	"github.com/spf13/viper"
-
-	"github.com/ayupov-ayaz/todo/pkg/modules/list"
-
-	"github.com/ayupov-ayaz/todo/pkg/modules/item"
-
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/ayupov-ayaz/todo/pkg/modules/auth"
 )
@@ -58,34 +49,8 @@ func initConfig() error {
 	return viper.ReadInConfig()
 }
 
-func authModel(
-	s *fiber.App, db *sqlx.DB, jwtSrv jwt.Service, val validator.Validator,
-	salt []byte, lifetime time.Duration,
-) {
-	repo := auth.NewPostgresRepository(db)
-	srv := auth.NewService(repo, val, jwtSrv, salt, lifetime)
-	handler := auth.NewHandler(srv)
-	handler.RunHandler(s)
-}
-
-func itemHandler(s *fiber.App, db *sqlx.DB, val validator.Validator) {
-	repo := item.NewPostgresRepository(db)
-	relationRepo := relations.NewPostgresRepository(db)
-	srv := item.NewService(repo, relationRepo, val)
-	handler := item.NewHandler(srv)
-	handler.RunHandler(s)
-}
-
-func listHandler(s *fiber.App, db *sqlx.DB, val validator.Validator) {
-	repo := list.NewPostgresRepository(db)
-	srv := list.NewService(repo, val)
-	handler := list.NewHandler(srv)
-	handler.RunHandler(s)
-
-}
-
 func makePostgres() (*sqlx.DB, error) {
-	cfg := repository.PostgresConfig{
+	cfg := db.PostgresConfig{
 		Host:     viper.GetString("db.host"),
 		Port:     viper.GetInt("db.port"),
 		Username: viper.GetString("db.username"),
@@ -94,7 +59,7 @@ func makePostgres() (*sqlx.DB, error) {
 		SSlMode:  viper.GetString("db.sslmode"),
 	}
 
-	return repository.MakePostgresDb(cfg)
+	return db.MakePostgresDb(cfg)
 }
 
 func Run() error {
@@ -106,11 +71,7 @@ func Run() error {
 		return err
 	}
 
-	authCfg := auth.Config{
-		Salt:       []byte(os.Getenv("PASS_SALT")),
-		SigningKey: []byte(os.Getenv("SIGNING_KEY")),
-		LifeTime:   viper.GetDuration("auth.lifetime"),
-	}
+	authCfg := auth.InitConfig()
 
 	validate := validator.NewBasicValidator()
 
@@ -123,7 +84,7 @@ func Run() error {
 		return err
 	}
 
-	jwtSrv := jwt.NewService(authCfg.SigningKey)
+	jwtSrv := jwt.NewUseCase(authCfg.SigningKey)
 	s := server.NewServer(jwtSrv)
 
 	authModel(s, db, jwtSrv, validate, authCfg.Salt, authCfg.LifeTime)

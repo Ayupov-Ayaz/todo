@@ -1,13 +1,13 @@
-package auth
+package http
 
 import (
 	"encoding/json"
 
+	"github.com/ayupov-ayaz/todo/pkg/modules/auth"
+
 	"github.com/ayupov-ayaz/todo/internal/helper"
 
 	"github.com/ayupov-ayaz/todo/internal/delivery/http"
-
-	_errors "github.com/ayupov-ayaz/todo/errors"
 
 	"go.uber.org/zap"
 
@@ -16,21 +16,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var (
-	ErrInvalidRequest = _errors.BadRequest("invalid request")
-)
-
-type AuthorizationService interface {
-	Create(user models.User) (int, error)
-	SignIn(username, password string) (string, error)
-}
-
 type Handler struct {
-	srv    AuthorizationService
+	srv    auth.UseCse
 	logger *zap.Logger
 }
 
-func NewHandler(srv AuthorizationService) *Handler {
+func NewHandler(srv auth.UseCse) *Handler {
 	return &Handler{
 		srv:    srv,
 		logger: zap.L().Named("auth_handler"),
@@ -52,7 +43,7 @@ func (h *Handler) SignUp(ctx *fiber.Ctx) error {
 			zap.ByteString("body", ctx.Body()),
 			zap.Error(err))
 
-		return ErrInvalidRequest
+		return auth.ErrInvalidRequest
 	}
 
 	id, err := h.srv.Create(user)
@@ -83,7 +74,7 @@ func (h *Handler) SignIn(ctx *fiber.Ctx) error {
 			zap.ByteString("body", ctx.Body()),
 			zap.Error(err))
 
-		return ErrInvalidRequest
+		return auth.ErrInvalidRequest
 	}
 
 	token, err := h.srv.SignIn(input.Username, input.Password)
