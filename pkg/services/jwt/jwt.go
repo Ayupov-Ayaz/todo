@@ -3,7 +3,7 @@ package jwt
 import (
 	"time"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	_errors "github.com/ayupov-ayaz/todo/internal/errors"
 
 	"github.com/dgrijalva/jwt-go"
 )

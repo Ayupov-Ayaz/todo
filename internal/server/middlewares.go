@@ -3,7 +3,7 @@ package server
 import (
 	"strings"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	_errors "github.com/ayupov-ayaz/todo/internal/errors"
 	"github.com/ayupov-ayaz/todo/internal/helper"
 
 	"github.com/gofiber/fiber/v2"

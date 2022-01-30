@@ -1,6 +1,6 @@
 package item
 
-import _errors "github.com/ayupov-ayaz/todo/errors"
+import _errors "github.com/ayupov-ayaz/todo/internal/errors"
 
 var (
 	ErrItemNotFound          = _errors.NotFound("item not found")

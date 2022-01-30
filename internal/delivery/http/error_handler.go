@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	_errors "github.com/ayupov-ayaz/todo/internal/errors"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"

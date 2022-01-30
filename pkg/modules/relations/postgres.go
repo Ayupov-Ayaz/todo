@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	_errors "github.com/ayupov-ayaz/todo/errors"
+	_errors "github.com/ayupov-ayaz/todo/internal/errors"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/jmoiron/sqlx"

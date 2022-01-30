@@ -1,6 +1,6 @@
 package list
 
-import _errors "github.com/ayupov-ayaz/todo/errors"
+import _errors "github.com/ayupov-ayaz/todo/internal/errors"
 
 var (
 	ErrInvalidRequest        = _errors.BadRequest("invalid request")
