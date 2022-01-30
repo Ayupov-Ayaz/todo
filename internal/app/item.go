@@ -13,7 +13,6 @@ import (
 func itemHandler(s *fiber.App, db *sqlx.DB, val validator.Validator) {
 	repo := repository.NewPostgresRepository(db)
 	relationRepo := relations.NewPostgresRepository(db)
-	srv := usecase.NewUseCase(repo, relationRepo, val)
-	handler := http.NewHandler(srv)
-	handler.RunHandler(s)
+	uc := usecase.NewUseCase(repo, relationRepo, val)
+	http.RegisterHTTPEndpoints(s, uc)
 }

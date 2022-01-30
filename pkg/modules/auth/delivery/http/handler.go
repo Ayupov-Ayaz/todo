@@ -17,22 +17,15 @@ import (
 )
 
 type Handler struct {
-	srv    auth.UseCse
+	uc     auth.UseCse
 	logger *zap.Logger
 }
 
-func NewHandler(srv auth.UseCse) *Handler {
+func NewHandler(uc auth.UseCse) *Handler {
 	return &Handler{
-		srv:    srv,
+		uc:     uc,
 		logger: zap.L().Named("auth_handler"),
 	}
-}
-
-func (h *Handler) RunHandler(router fiber.Router) {
-	group := router.Group("/auth")
-
-	group.Post("/sign-up", h.SignUp)
-	group.Post("/sign-in", h.SignIn)
 }
 
 func (h *Handler) SignUp(ctx *fiber.Ctx) error {
@@ -46,7 +39,7 @@ func (h *Handler) SignUp(ctx *fiber.Ctx) error {
 		return auth.ErrInvalidRequest
 	}
 
-	id, err := h.srv.Create(user)
+	id, err := h.uc.Create(user)
 	if err != nil {
 		return err
 	}
@@ -77,7 +70,7 @@ func (h *Handler) SignIn(ctx *fiber.Ctx) error {
 		return auth.ErrInvalidRequest
 	}
 
-	token, err := h.srv.SignIn(input.Username, input.Password)
+	token, err := h.uc.SignIn(input.Username, input.Password)
 	if err != nil {
 		return err
 	}

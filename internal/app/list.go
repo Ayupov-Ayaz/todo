@@ -11,8 +11,6 @@ import (
 
 func listHandler(s *fiber.App, db *sqlx.DB, val validator.Validator) {
 	repo := repository.NewPostgresRepository(db)
-	srv := usecase.NewUseCase(repo, val)
-	handler := http.NewHandler(srv)
-	handler.RunHandler(s)
-
+	uc := usecase.NewUseCase(repo, val)
+	http.RegisterHttpEndpoints(s, uc)
 }

@@ -17,7 +17,6 @@ func authModel(
 	salt []byte, lifetime time.Duration,
 ) {
 	repo := repositories.NewPostgresRepository(db)
-	srv := usecase.NewUseCase(repo, val, jwtSrv, salt, lifetime)
-	handler := http.NewHandler(srv)
-	handler.RunHandler(s)
+	uc := usecase.NewUseCase(repo, val, jwtSrv, salt, lifetime)
+	http.RegisterHttpEndpoints(s, uc)
 }

@@ -15,25 +15,15 @@ import (
 )
 
 type Handler struct {
-	srv    list.UseCase
+	uc     list.UseCase
 	logger *zap.Logger
 }
 
-func NewHandler(srv list.UseCase) *Handler {
+func NewHandler(uc list.UseCase) *Handler {
 	return &Handler{
-		srv:    srv,
+		uc:     uc,
 		logger: zap.L().Named("list_handler"),
 	}
-}
-
-func (h *Handler) RunHandler(router fiber.Router) {
-	group := router.Group("/lists")
-
-	group.Post("/", h.Create)
-	group.Get("/", h.GetLists)
-	group.Get("/:id", h.Get)
-	group.Patch("/:id", h.Update)
-	group.Delete("/:id", h.Delete)
 }
 
 func (h *Handler) Create(ctx *fiber.Ctx) error {
@@ -49,7 +39,7 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 		return list.ErrInvalidRequest
 	}
 
-	id, err := h.srv.Create(ctx.UserContext(), userID, todoList)
+	id, err := h.uc.Create(ctx.UserContext(), userID, todoList)
 	if err != nil {
 		return err
 	}
@@ -75,7 +65,7 @@ func (h *Handler) GetLists(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	lists, err := h.srv.GetAll(ctx.UserContext(), userID)
+	lists, err := h.uc.GetAll(ctx.UserContext(), userID)
 	if err != nil {
 		return err
 	}
@@ -104,7 +94,7 @@ func (h *Handler) Get(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	todoList, err := h.srv.Get(ctx.UserContext(), userID, listID)
+	todoList, err := h.uc.Get(ctx.UserContext(), userID, listID)
 	if err != nil {
 		return err
 	}
@@ -139,7 +129,7 @@ func (h *Handler) Update(ctx *fiber.Ctx) error {
 		return list.ErrInvalidRequest
 	}
 
-	if err := h.srv.Update(ctx.UserContext(), userID, listID, input); err != nil {
+	if err := h.uc.Update(ctx.UserContext(), userID, listID, input); err != nil {
 		return err
 	}
 
@@ -161,7 +151,7 @@ func (h *Handler) Delete(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.srv.Delete(ctx.UserContext(), userID, listID); err != nil {
+	if err := h.uc.Delete(ctx.UserContext(), userID, listID); err != nil {
 		return err
 	}
 

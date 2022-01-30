@@ -17,26 +17,15 @@ import (
 )
 
 type Handler struct {
-	srv    item.UseCase
+	uc     item.UseCase
 	logger *zap.Logger
 }
 
-func NewHandler(srv item.UseCase) *Handler {
+func NewHandler(uc item.UseCase) *Handler {
 	return &Handler{
-		srv:    srv,
+		uc:     uc,
 		logger: zap.L().Named("item_handler"),
 	}
-}
-
-func (h *Handler) RunHandler(router fiber.Router) {
-	groupList := router.Group("/:listID/item")
-	groupList.Post("/", h.Create)
-	groupList.Get("/", h.GetAll)
-
-	groupItem := router.Group("item/:itemID")
-	groupItem.Get("", h.Get)
-	groupItem.Patch("", h.Update)
-	groupItem.Delete("", h.Delete)
 }
 
 func getListID(ctx *fiber.Ctx) (int, error) {
@@ -66,7 +55,7 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	id, err := h.srv.Create(ctx.UserContext(), userID, listID, item)
+	id, err := h.uc.Create(ctx.UserContext(), userID, listID, item)
 	if err != nil {
 		return err
 	}
@@ -99,7 +88,7 @@ func (h *Handler) GetAll(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	items, err := h.srv.GetAll(ctx.UserContext(), userID, listID)
+	items, err := h.uc.GetAll(ctx.UserContext(), userID, listID)
 	if err != nil {
 		return err
 	}
@@ -128,7 +117,7 @@ func (h *Handler) Get(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	item, err := h.srv.Get(ctx.UserContext(), userID, itemID)
+	item, err := h.uc.Get(ctx.UserContext(), userID, itemID)
 	if err != nil {
 		return err
 	}
@@ -162,7 +151,7 @@ func (h *Handler) Delete(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.srv.Delete(ctx.UserContext(), userID, itemID); err != nil {
+	if err := h.uc.Delete(ctx.UserContext(), userID, itemID); err != nil {
 		return err
 	}
 
