@@ -3,7 +3,9 @@ package app
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"github.com/ayupov-ayaz/todo/pkg/services/db"
 
@@ -91,8 +93,26 @@ func Run() error {
 	listHandler(s, db, validate)
 	itemHandler(s, db, validate)
 
-	if err := s.Listen(":" + strconv.Itoa(viper.GetInt("server.port"))); err != nil {
-		return fmt.Errorf("occured while running http server: %w", err)
+	l := zap.L().Named("app")
+	go func() {
+		if err := s.Listen(":" + strconv.Itoa(viper.GetInt("server.port"))); err != nil {
+			l.Error("start server failed", zap.Error(err))
+		}
+	}()
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGTERM, syscall.SIGINT)
+
+	_type := <-shutdown
+
+	l.Info("graceful shutdown", zap.String("type", _type.String()))
+
+	if err := s.Shutdown(); err != nil {
+		l.Error("failed to shutdown fiber server", zap.Error(err))
+	}
+
+	if err := db.Close(); err != nil {
+		l.Error("failed to shutdown database")
 	}
 
 	return nil
