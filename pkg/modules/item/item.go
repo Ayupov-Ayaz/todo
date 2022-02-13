@@ -14,8 +14,8 @@ type Repository interface {
 }
 
 type UsersListRepository interface {
-	GetListUserByListId(ctx context.Context, listID int) (models.ListUser, error)
-	GetListUserByItemId(ctx context.Context, itemID int) (models.ListUser, error)
+	GetListUserRelationByListId(ctx context.Context, listID int) (models.ListUserRelation, error)
+	GetListUserRelationByItemId(ctx context.Context, itemID int) (models.ListUserRelation, error)
 }
 
 type UseCase interface {

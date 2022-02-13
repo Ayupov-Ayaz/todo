@@ -1,11 +1,9 @@
 package helper
 
-import "encoding/json"
+import (
+	"strconv"
+)
 
-func MarshalingId(id int) ([]byte, error) {
-	return json.Marshal(struct {
-		ID int `json:"id"`
-	}{
-		ID: id,
-	})
+func MarshalingId(id int) []byte {
+	return []byte(`{"id":` + strconv.Itoa(id) + `}`)
 }

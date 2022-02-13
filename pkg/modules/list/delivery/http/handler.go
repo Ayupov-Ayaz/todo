@@ -44,12 +44,7 @@ func (h *Handler) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	raw, err := helper.MarshalingId(id)
-	if err != nil {
-		h.logger.Error("marshaling response failed", zap.Error(err))
-	}
-
-	http.SendJson(ctx, raw, 200)
+	http.SendJson(ctx, helper.MarshalingId(id), 200)
 
 	return nil
 }

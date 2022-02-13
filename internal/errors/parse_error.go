@@ -13,7 +13,7 @@ func ParseValidatorErrors(valErrors validator.ValidationErrors) string {
 	last := len(valErrors) - 1
 	var message string
 	for i, err := range valErrors {
-		message += err.Field() + ":" + err.Tag()
+		message += "validation failed. failed field '" + err.Field() + "` tag '" + err.Tag() + `'`
 
 		if i != last {
 			message += ";"

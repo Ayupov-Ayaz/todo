@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	list2 "github.com/ayupov-ayaz/todo/pkg/modules/list"
+	"github.com/ayupov-ayaz/todo/pkg/modules/list"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/jmoiron/sqlx"
@@ -74,17 +74,17 @@ func (r *PostgresRepository) Get(_ context.Context, userID int, listID int) (mod
 					INNER JOIN users_lists ul on tl.id = ul.list_id
 					WHERE ul.user_id = $1 AND ul.list_id = $2;`
 
-	var list models.TodoList
+	var todoList models.TodoList
 
-	err := r.db.Get(&list, getList, userID, listID)
+	err := r.db.Get(&todoList, getList, userID, listID)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		err = list2.ErrListNotFound
+		err = list.ErrListNotFound
 	}
 
-	return list, err
+	return todoList, err
 }
 
-func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input list2.UpdateTodoList) error {
+func (r *PostgresRepository) Update(_ context.Context, userID, listID int, input list.UpdateTodoList) error {
 	setValues := make([]string, 0, 2)
 	args := make([]interface{}, 0, 2)
 	argID := 1

@@ -31,7 +31,7 @@ func NewUseCase(repo item.Repository, listRepo item.UsersListRepository, validat
 }
 
 func (s *Service) checkListOwner(ctx context.Context, userID, listID int) error {
-	userList, err := s.listRepo.GetListUserByListId(ctx, listID)
+	userList, err := s.listRepo.GetListUserRelationByListId(ctx, listID)
 	if err != nil {
 		s.logger.Error("get relation users_lists failed",
 			zap.Int("list_id", listID),
@@ -52,7 +52,7 @@ func (s *Service) checkListOwner(ctx context.Context, userID, listID int) error 
 }
 
 func (s *Service) checkItemOwner(ctx context.Context, userID, itemID int) error {
-	userList, err := s.listRepo.GetListUserByItemId(ctx, itemID)
+	userList, err := s.listRepo.GetListUserRelationByItemId(ctx, itemID)
 	if err != nil {
 		if errors.Is(err, relations.ErrListNotFound) {
 			err = item.ErrItemNotFound
