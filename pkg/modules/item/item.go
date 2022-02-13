@@ -11,6 +11,7 @@ type Repository interface {
 	GetAll(ctx context.Context, listID int) ([]models.Item, error)
 	Get(ctx context.Context, userID, itemID int) (models.Item, error)
 	Delete(ctx context.Context, userID, itemID int) error
+	Update(ctx context.Context, userID, itemID int, item UpdateItem) error
 }
 
 type UsersListRepository interface {
@@ -23,4 +24,5 @@ type UseCase interface {
 	GetAll(ctx context.Context, userID, listID int) ([]models.Item, error)
 	Get(ctx context.Context, userID, itemID int) (models.Item, error)
 	Delete(ctx context.Context, userID, itemID int) error
+	Update(ctx context.Context, userID, itemID int, item UpdateItem) error
 }

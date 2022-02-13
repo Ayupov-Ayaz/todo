@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/ayupov-ayaz/todo/internal/models"
 	"github.com/ayupov-ayaz/todo/pkg/modules/item"
@@ -37,6 +39,7 @@ func (p *PostgresRepository) Create(_ context.Context, listID int, item models.I
 	}
 
 	const linkListItem = `INSERT INTO list_items (list_id, item_id) VALUES ($1, $2);`
+
 	if _, err := tx.Exec(linkListItem, listID, id); err != nil {
 		_ = tx.Rollback()
 		return 0, fmt.Errorf("create relations item -> list failed: %w", err)
@@ -82,7 +85,7 @@ func (p *PostgresRepository) Get(_ context.Context, userID, itemID int) (models.
 	return _item, nil
 }
 
-func (p *PostgresRepository) Delete(ctx context.Context, userID, itemID int) error {
+func (p *PostgresRepository) Delete(_ context.Context, userID, itemID int) error {
 	const query = `DELETE FROM todo_item ti 
 						USING list_items li, users_lists ul 
 					WHERE ti.id = li.item_id 
@@ -94,4 +97,44 @@ func (p *PostgresRepository) Delete(ctx context.Context, userID, itemID int) err
 	}
 
 	return nil
+}
+
+func (p *PostgresRepository) Update(_ context.Context, userID, itemID int, input item.UpdateItem) error {
+	setValues := make([]string, 0, 3)
+	args := make([]interface{}, 0, 3)
+	argID := 1
+
+	if input.Title != nil {
+		setValues = append(setValues, "title=$"+strconv.Itoa(argID))
+		args = append(args, *input.Title)
+		argID++
+	}
+
+	if input.Description != nil {
+		setValues = append(setValues, "description=$"+strconv.Itoa(argID))
+		args = append(args, *input.Description)
+		argID++
+	}
+
+	if input.Done != nil {
+		setValues = append(setValues, "done=$"+strconv.Itoa(argID))
+		args = append(args, *input.Done)
+		argID++
+	}
+
+	args = append(args, userID, itemID)
+	setQuery := strings.Join(setValues, ", ")
+
+	const update = `UPDATE todo_item ti SET %s
+	FROM list_items li, users_lists ul
+	WHERE ti.id = li.item_id 
+	AND ul.list_id = li.list_id
+	AND ul.user_id = $%d
+	AND ti.id = $%d`
+
+	query := fmt.Sprintf(update, setQuery, argID, argID+1)
+
+	_, err := p.db.Exec(query, args...)
+
+	return err
 }

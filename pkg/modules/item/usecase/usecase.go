@@ -138,3 +138,21 @@ func (s *Service) Delete(ctx context.Context, userID, itemID int) error {
 
 	return nil
 }
+
+func (s *Service) Update(ctx context.Context, userID, itemID int, item item.UpdateItem) error {
+	if err := item.Validate(); err != nil {
+		s.logger.Warn("validation failed", zap.Error(err))
+		return err
+	}
+
+	if err := s.itemRepo.Update(ctx, userID, itemID, item); err != nil {
+		s.logger.Error("failed to update the item",
+			zap.Int("user_id", userID),
+			zap.Int("item_id", itemID),
+			zap.Error(err))
+
+		return err
+	}
+
+	return nil
+}

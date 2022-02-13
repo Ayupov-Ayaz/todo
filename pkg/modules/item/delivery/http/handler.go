@@ -128,6 +128,29 @@ func (h *Handler) Get(ctx *fiber.Ctx) error {
 }
 
 func (h Handler) Update(ctx *fiber.Ctx) error {
+	userID, err := helper.GetUserID(ctx)
+	if err != nil {
+		h.logger.Warn("get user id from ctx failed", zap.Error(err))
+		return err
+	}
+
+	itemID, err := getItemID(ctx)
+	if err != nil {
+		h.logger.Warn("param item id doesn't send", zap.Error(err))
+		return err
+	}
+
+	var uItem item.UpdateItem
+	if err := json.Unmarshal(ctx.Body(), &uItem); err != nil {
+		h.logger.Warn("unmarshal body failed", zap.Error(err))
+		return err
+	}
+
+	if err := h.uc.Update(ctx.Context(), userID, itemID, uItem); err != nil {
+		return err
+	}
+
+	http.SendOk(ctx, 200)
 
 	return nil
 }
